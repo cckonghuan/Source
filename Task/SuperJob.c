@@ -1059,21 +1059,23 @@ void    sUpgradeMode(void)
 	INT8U i;
 	
 	// Initial
+	// 初始化
 	mMOS_ALL_OFF();
 	mLED_ALARM_OFF();
 	mLED_STATUS_ON();
 	
+	//等待时间
 	for(i = 0; i < cT500ms; i++)
 	{
 		OSMaskEventPend(1 << eSuperTimer);
 	}
 	
-	// Erase Boot Flag
+	// Erase Boot Flag，擦除引导标志
 	//mFLASH_UNLOCK();
 	//mFLASH_PAGE_ERASE(FLASH_FLG_ADDR_START);
 	//mFLASH_LOCK();
 	
-	// Jump to user application
+	// Jump to user application，跳转用户应用程序
 	JumpAddress = *(__IO INT32U*) (FLASH_IAP_ADDR_START + 4);
 	Jump_To_Application = (pFunction) JumpAddress;
 	

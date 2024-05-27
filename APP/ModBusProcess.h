@@ -33,13 +33,13 @@ Description:	None
 MODBUS_PROCESS	void	sModBusSciAddrInitChk(INT16U wTimeBase);
 MODBUS_PROCESS	void	sModBusParsing(INT8U sciid);
 MODBUS_PROCESS	void	sCommConnectChk(INT8U sciid, INT16U wFilter);
-MODBUS_PROCESS  void	sGroWatt_ModBusParsing(INT8U sciid);
-MODBUS_PROCESS  void	sGrowatt_ModBusRdProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLen);
-MODBUS_PROCESS  void	sGrowatt_ModBusWrProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLen);
-MODBUS_PROCESS  void	sGrowatt_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (*RdFunc)(INT16U));
-MODBUS_PROCESS  void	sGrowatt_BuildWrFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U (*WrFunc)(INT16U, INT16U));
-MODBUS_PROCESS  void	sGrowatt_BuildFaultFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U ErrCode);
-MODBUS_PROCESS  INT16U  swGrowatt_BMSDataRead(INT16U RdAddr);
+//MODBUS_PROCESS  void	sGroWatt_ModBusParsing(INT8U sciid);
+//MODBUS_PROCESS  void	sGrowatt_ModBusRdProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLen);
+//MODBUS_PROCESS  void	sGrowatt_ModBusWrProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLen);
+//MODBUS_PROCESS  void	sGrowatt_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (*RdFunc)(INT16U));
+//MODBUS_PROCESS  void	sGrowatt_BuildWrFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U (*WrFunc)(INT16U, INT16U));
+//MODBUS_PROCESS  void	sGrowatt_BuildFaultFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U ErrCode);
+//MODBUS_PROCESS  INT16U  swGrowatt_BMSDataRead(INT16U RdAddr);
 MODBUS_PROCESS  INT8U	swGrowatt_EESettingWrite(INT16U WrAddr, INT16U WrData);
 
 MODBUS_PROCESS  void	sVoltronic_ModBusParsing(INT8U sciid);

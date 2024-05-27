@@ -27,7 +27,7 @@ Description:	None
 #define	cROUTE_PROT_OPENBLT			1
 #define	cROUTE_PROT_VOLTRONIC		2
 #define	cROUTE_PROT_PYLON			3
-#define	cROUTE_PROT_Growatt			4
+//#define	cROUTE_PROT_Growatt			4
 
 #define cProtocol_Branch            cROUTE_PROT_VOLTRONIC
 /********************************************************************************

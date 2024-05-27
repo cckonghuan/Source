@@ -265,10 +265,12 @@ void 	sCanParaErrProtChk(void);
 /********************************************************************************
 * Routines' implementations														*
 ********************************************************************************/
+// 初始化CAN协议新
 void	sCanProtocolNewInitial(void)
 {
 	INT8U i;
 	
+	// 设置CAN本地地址和ID
 	bCanLocalAddress = sbGetCanAddress();
 	bCanLocalId = bCanLocalAddress + cCAN_DEVICE_BASE_ADDRESS;
 	
@@ -278,6 +280,7 @@ void	sCanProtocolNewInitial(void)
 	wBmsDataPollingCnt = 3;
 	wUserDataPollingCnt = 4;
 	
+	// 初始化并清零相关标志和计数器
 	dwParallelNewFlag = 0;
 	dwParallelSlaveFlag = 0;
 	dwParallelHostFlag = 0;
@@ -295,32 +298,36 @@ void	sCanProtocolNewInitial(void)
 	
 	dwCanUserIdFlag = 0;
 	
+	// 清零自动广播接收和虚拟广播数据结构
 	memset(&strCanAutoAdsRx, 0, sizeof(T_CanAutoAdsRxFrame) * cCAN_DEVICE_DOUBLE);
 	memset(&strCanVirtualAds, 0, sizeof(T_CanVirtAdsFrame) * cCAN_DEVICE_NUM);
 }
 
-void	sCanErrCntInit(void)
+// 初始化CAN错误计数器
+void sCanErrCntInit(void) 
 {
-	bParallelErrChkCnt = 0;
-	dwParallelErrClrCnt = 0;
+    bParallelErrChkCnt = 0; // 并机错误检查计数器清零
+    dwParallelErrClrCnt = 0; // 并机错误清除计数器清零
 }
 
+// 解析新的CAN帧数据
 void	sCanProtocolNewParsing(T_CAN_FRAME *pData)
 {
 	T_CAN_NEW_FRAME strRxFrame;
 	
+	//将CAN帧数据转换为新的CAN帧数据结构
 	strRxFrame.Id.dwData = pData->Id;
 	strRxFrame.Data.dwData[0] = pData->Data.dwData[0];
 	strRxFrame.Data.dwData[1] = pData->Data.dwData[1];
 	
 	// 目的地址:本机地址/广播地址/虚拟主机地址(仅针对虚拟主机起作用)
-	if(bCanParallelRole == cCAN_PARALLEL_HOST)
+	if(bCanParallelRole == cCAN_PARALLEL_HOST)// 如果本机角色是并机主机
 	{
 		if((strRxFrame.Id.Bit.DestinAddress != bCanLocalId) \
 			&& (strRxFrame.Id.Bit.DestinAddress != eCAN_DES_ADDR_BRD) \
 			&& (strRxFrame.Id.Bit.DestinAddress != eCAN_DES_ADDR_HOST))
 		{
-			return;
+			return;// 不是本机/广播/虚拟主机地址的帧，直接返回
 		}
 	}
 	else
@@ -340,63 +347,71 @@ void	sCanProtocolNewParsing(T_CAN_FRAME *pData)
 		return;
 	}
 	
-	// 
+	// 根据功能吗进行响应的解析
 	if(strRxFrame.Id.Bit.FunctionCode == eCAN_FUNC_CTRL_EVENT)
 	{
-		sCanControlEventParsing(&strRxFrame);
+		sCanControlEventParsing(&strRxFrame);//控制事件帧解析
 	}
 	else if(strRxFrame.Id.Bit.FunctionCode == eCAN_FUNC_USER_DATA)
 	{
-		sCanUserDataParsing(&strRxFrame);
+		sCanUserDataParsing(&strRxFrame);//用户数据帧解析
 	}
 	else if(strRxFrame.Id.Bit.FunctionCode == eCAN_FUNC_RT_DATA)
 	{
-		sCanEmsDataParsing(&strRxFrame);
-		sCanBmsDataParsing(&strRxFrame);
+		sCanEmsDataParsing(&strRxFrame); // EMS数据帧解析
+		sCanBmsDataParsing(&strRxFrame); // BMS数据帧解析
 	}
 	else if(strRxFrame.Id.Bit.FunctionCode == eCAN_FUNC_DEV_INFO)
 	{
-		
+		// 设备信息帧解析
+        // 此处可以添加相应的函数调用来处理设备信息帧
 	}
 }
 
+// 并机定时轮询函数
 void	sCanParallelTimerPolling(INT16U wTimeBase, INT16U wFilter)
 {
 	T_CAN_FRAME strFrame;
 	T_CAN_NEW_ID strId;
 	
+	// 轮询计数器累加时间基准
 	wParallelPollingCnt += wTimeBase;
+	// 如果轮询计数器超过了过滤时间
 	if(wParallelPollingCnt >= wFilter)
 	{
-		wParallelPollingCnt = 0;
+		wParallelPollingCnt = 0;// 重置轮询计数器
 		
+		// 初始化CAN帧ID
 		strId.dwData = 0;
 		strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
 		strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
 		if(sbGetKeyAddress() == 0)	// 硬件拨码地址为零时表示自动分配地址       
 		{
+			// 设置源地址位拨码地址加上设备基本地址
 			strId.Bit.SourceAddress = sbGetCanAddress() + cCAN_DEVICE_BASE_ADDRESS;//eCAN_SRC_ADDR_AUTO;
-			strId.Bit.KeyVer = 0;
+			strId.Bit.KeyVer = 0;// 设置拨码版本为0
 		}
 		else
 		{
+			// 设置源地址为拨码地址加上设备基本地址
 			strId.Bit.SourceAddress = sbGetKeyAddress() + cCAN_DEVICE_BASE_ADDRESS;
-			strId.Bit.KeyVer = 1;
+			strId.Bit.KeyVer = 1;//设置拨码版本为1
 		}
-		strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
+		strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;// 设置目的地址为广播地址
+		// 根据并机角色设置消息ID
 		if(bCanParallelRole == cCAN_PARALLEL_HOST)
 		{
-			strId.Bit.MessageId = eCAN_MSG_PARALLEL_HOST_ID;
+			strId.Bit.MessageId = eCAN_MSG_PARALLEL_HOST_ID;//并机主机ID
 		}
 		else if(bCanParallelRole == cCAN_PARALLEL_SLAVE)
 		{
-			strId.Bit.MessageId = eCAN_MSG_PARALLEL_SLAVE_ID;
+			strId.Bit.MessageId = eCAN_MSG_PARALLEL_SLAVE_ID;// 并机从机ID
 		}
 		else
 		{
-			strId.Bit.MessageId = eCAN_MSG_PARALLEL_NEW_ID;
+			strId.Bit.MessageId = eCAN_MSG_PARALLEL_NEW_ID;// 新并机ID
 		}
-		strFrame.Id = strId.dwData;
+		strFrame.Id = strId.dwData;//设置CAN帧ID
 		
 		//strFrame.Data.dwData[0] = 0x0;
 		//strFrame.Data.dwData[1] = 0x0;
@@ -414,41 +429,47 @@ void	sCanParallelTimerPolling(INT16U wTimeBase, INT16U wFilter)
 	}
 }
 
+// EMS数据定时轮询函数
 void	sCanEmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 {
-	static	INT8U bId = eCAN_MSG_EMS_ID_START;
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
-	INT16U data;
-	INT8U bFlag;
+	static INT8U bId = eCAN_MSG_EMS_ID_START; // EMS消息ID计数器，初始为起始ID
+    T_CAN_FRAME strFrame; // CAN帧结构体
+    T_CAN_NEW_ID strId; // CAN帧ID结构体
+    INT16U data; // 数据
+    INT8U bFlag; // 标志位
 	
+	// 如果不是并机主机角色，则直接返回
 	if(bCanParallelRole != cCAN_PARALLEL_HOST)
 	{
 		return;
 	}
 	
-	wEmsDataPollingCnt += wTimeBase;
-	if(wEmsDataPollingCnt >= wFilter)
-	{
-		wEmsDataPollingCnt = 0;
+	// 轮询计数器累加时间基准
+    wEmsDataPollingCnt += wTimeBase;
+    // 如果轮询计数器超过了过滤时间
+    if(wEmsDataPollingCnt >= wFilter) {
+        wEmsDataPollingCnt = 0; // 重置轮询计数器
+        
+        // EMS消息ID递增
+        if(++bId >= eCAN_MSG_EMS_ID_END) {
+            bId = eCAN_MSG_EMS_ID_START; // 超过最大ID时重置为起始ID
+        }
 		
-		if(++bId >= eCAN_MSG_EMS_ID_END)
-		{
-			bId = eCAN_MSG_EMS_ID_START;
-		}
+		// 初始化CAN帧ID
+        strId.dwData = 0;
+        strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
+        strId.Bit.FunctionCode = eCAN_FUNC_RT_DATA;
+        strId.Bit.SourceAddress = eCAN_SRC_ADDR_HOST;
+        strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
+        strId.Bit.MessageId = bId;
+        strFrame.Id = strId.dwData; // 设置CAN帧ID
+        bFlag = 1; // 初始化标志位为1
 		
-		strId.dwData = 0;
-		strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
-		strId.Bit.FunctionCode = eCAN_FUNC_RT_DATA;
-		strId.Bit.SourceAddress = eCAN_SRC_ADDR_HOST;
-		strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
-		strId.Bit.MessageId = bId;
-		strFrame.Id = strId.dwData;
-		bFlag = 1;
-		
+		// 根据消息ID设置数据字段
 		switch(bId)
 		{
 			case eCAN_MSG_EMS_ID01:
+				// 从EMS数据结构中获取数据并转化为大端序
 				data = pEmsData->Field.ChargeVoltageLimit;
 				strFrame.Data.wData[0] = swHighLowByteSwap(data);
 				data = pEmsData->Field.DischargeVoltageLimit;
@@ -458,6 +479,7 @@ void	sCanEmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 				data = pEmsData->Field.DischargeCurrentLimit;
 				strFrame.Data.wData[3] = swHighLowByteSwap(data);
 			break;
+			// 以下与上面类似
 			case eCAN_MSG_EMS_ID02:
 				data = pEmsData->Field.StatusHigh;
 				strFrame.Data.wData[0] = swHighLowByteSwap(data);
@@ -529,10 +551,11 @@ void	sCanEmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 				strFrame.Data.wData[3] = swHighLowByteSwap(data);
 			break;
 			default:
-				bFlag = 0;
+				bFlag = 0;// 如果消息ID不在范围内，则将标志位置为0
 			break;
 		}
 		
+		// 如果标志位为1，则发送CAN帧
 		if(bFlag == 1)
 		{
 			sCanWrite(cBMS_CAN, &strFrame, 8);
@@ -540,36 +563,43 @@ void	sCanEmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 	}
 }
 
+// BMS数据定时轮询函数
 void	sCanBmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 {
-	static	INT8U bId = eCAN_MSG_BMS_ID_START;
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
-	INT16U data;
-	INT8U bFlag;
+	static	INT8U bId = eCAN_MSG_BMS_ID_START;//bms消息ID计数器，初始为起始ID
+	T_CAN_FRAME strFrame; // CAN帧结构体
+	T_CAN_NEW_ID strId; //CAN帧结构体
+	INT16U data; // 数据
+	INT8U bFlag; // 标志位
 	
+	// 轮询计数器累加时间基准
 	wBmsDataPollingCnt += wTimeBase;
+	// 如果轮询计数器超过了过滤时间
 	if(wBmsDataPollingCnt >= wFilter)
 	{
-		wBmsDataPollingCnt = 0;
+		wBmsDataPollingCnt = 0;//重置轮询计数器
 		
+		// BMS消息ID递增
 		if(++bId >= eCAN_MSG_BMS_ID_END)
 		{
-			bId = eCAN_MSG_BMS_ID_START;
+			bId = eCAN_MSG_BMS_ID_START;// 超过最大ID时重置为起始ID
 		}
 		
+		// 初始化CAN帧ID
 		strId.dwData = 0;
 		strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
 		strId.Bit.FunctionCode = eCAN_FUNC_RT_DATA;
 		strId.Bit.SourceAddress = bCanLocalId;
 		strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
 		strId.Bit.MessageId = bId;
-		strFrame.Id = strId.dwData;
-		bFlag = 1;
+		strFrame.Id = strId.dwData; //设置CAN帧ID
+		bFlag = 1; // 初始化标志位为1
 		
+		// 根据消息ID设置数据字段
 		switch(bId)
 		{
 			case eCAN_MSG_BMS_ID01:
+			// 从BMS本地数据结构中获取数据并转换为大端序
 				data = pBmsDataLocal->Field.ChargeVoltageLimit;
 				strFrame.Data.wData[0] = swHighLowByteSwap(data);
 				data = pBmsDataLocal->Field.DischargeVoltageLimit;
@@ -730,10 +760,11 @@ void	sCanBmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 				strFrame.Data.wData[3] = swHighLowByteSwap(data);
 			break;
 			default:
-				bFlag = 0;
+				bFlag = 0;//如果消息ID不在范围内，则将标志位置为1
 			break;
 		}
 		
+		//如果标志位为1，则发送CAN帧
 		if(bFlag == 1)
 		{
 			sCanWrite(cBMS_CAN, &strFrame, 8);
@@ -741,11 +772,12 @@ void	sCanBmsDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 	}
 }
 
+// 用户数据定时轮询函数
 void	sCanUserDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 {
-	static	INT8U id = eCAN_MSG_USER_ID_START;
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
+	static INT8U id = eCAN_MSG_USER_ID_START; // 用户消息ID计数器，初始为起始ID
+    T_CAN_FRAME strFrame; // CAN帧结构体
+    T_CAN_NEW_ID strId; // CAN帧ID结构体
 	
 	if((bCanParallelRole != cCAN_PARALLEL_SLAVE) \
 		|| (dwParallelHostFlag == 0))	// 本机为从机且总线存在主机
@@ -753,7 +785,9 @@ void	sCanUserDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 		return;
 	}
 	
-	wUserDataPollingCnt += wTimeBase;
+	// 轮询计数器累加时间基准
+    wUserDataPollingCnt += wTimeBase;
+    // 如果轮询计数器超过了过滤时间
 	if(wUserDataPollingCnt >= wFilter)
 	{
 		wUserDataPollingCnt = 0;
@@ -763,11 +797,13 @@ void	sCanUserDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 		{
 			if(++id >= eCAN_MSG_USER_ID_END)
 			{
-				id = eCAN_MSG_USER_ID_START;
+				id = eCAN_MSG_USER_ID_START;// 超过最大ID时重置为起始ID
 			}
 			
+			// 如果当前消息ID对应的参数未被同步，则发送用户数据帧
 			if((dwCanUserIdFlag & ((INT32U)1 << id)) == 0)
 			{
+				// 初始化CAN帧ID
 				strId.dwData = 0;
 				strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
 				strId.Bit.FunctionCode = eCAN_FUNC_USER_DATA;
@@ -776,22 +812,25 @@ void	sCanUserDataTimerPolling(INT16U wTimeBase, INT16U wFilter)
 				strId.Bit.MessageId = id;
 				strFrame.Id = strId.dwData;
 				
-				sCanWrite(cBMS_CAN, &strFrame, 0);
+				sCanWrite(cBMS_CAN, &strFrame, 0);// 发送CAN帧
 			}
 		}
 	}
 }
 
+// 同步显示键盘命令函数
 void	sCanSyncDisplayKeyCommand(void)
 {
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
+	T_CAN_FRAME strFrame;// CAN帧结构体
+	T_CAN_NEW_ID strId;// CAN帧ID结构体
 	
+	// 如果本机角色不是主机，则直接返回
 	if(bCanParallelRole != cCAN_PARALLEL_HOST)
 	{
 		return;
 	}
 	
+	// 初始化CAN帧ID
 	strId.dwData = 0;
 	strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
 	strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
@@ -800,19 +839,22 @@ void	sCanSyncDisplayKeyCommand(void)
 	strId.Bit.MessageId = eCAN_MSG_SYNC_KEY_ID;
 	strFrame.Id = strId.dwData;
 	
-	sCanWrite(cBMS_CAN, &strFrame, 0);
+	sCanWrite(cBMS_CAN, &strFrame, 0); //发送CAN帧
 }
 
+// 同步显示SOC命令函数
 void	sCanSyncDisplaySocCommand(void)
 {
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
-	
+	T_CAN_FRAME strFrame; // CAN帧结构体
+    T_CAN_NEW_ID strId; // CAN帧ID结构体
+
+	// 如果本机角色不是主机，则直接返回
 	if(bCanParallelRole != cCAN_PARALLEL_HOST)
 	{
 		return;
 	}
 	
+	// 初始化CAN帧ID
 	strId.dwData = 0;
 	strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
 	strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
@@ -821,44 +863,48 @@ void	sCanSyncDisplaySocCommand(void)
 	strId.Bit.MessageId = eCAN_MSG_SYNC_SOC_ID;
 	strFrame.Id = strId.dwData;
 	
-	sCanWrite(cBMS_CAN, &strFrame, 0);
+	sCanWrite(cBMS_CAN, &strFrame, 0);// 发送CAN帧
 }
 
+//同步用户参数命令函数
 void	sCanSyncUserParaCommand(void)
 {
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
-	
-	if(bCanParallelRole != cCAN_PARALLEL_HOST)
-	{
-		return;
-	}
-	
-	strId.dwData = 0;
-	strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
-	strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
-	strId.Bit.SourceAddress = eCAN_SRC_ADDR_HOST;
-	strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
-	strId.Bit.MessageId = eCAN_MSG_SYNC_USER_ID;
-	strFrame.Id = strId.dwData;
-	
-	sCanWrite(cBMS_CAN, &strFrame, 0);
+	T_CAN_FRAME strFrame; // CAN帧结构体
+    T_CAN_NEW_ID strId; // CAN帧ID结构体
+    
+    // 如果本机角色不是主机，则直接返回
+    if(bCanParallelRole != cCAN_PARALLEL_HOST) {
+        return;
+    }
+    
+    // 初始化CAN帧ID
+    strId.dwData = 0;
+    strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
+    strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
+    strId.Bit.SourceAddress = eCAN_SRC_ADDR_HOST;
+    strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
+    strId.Bit.MessageId = eCAN_MSG_SYNC_USER_ID;
+    strFrame.Id = strId.dwData;
+    
+    sCanWrite(cBMS_CAN, &strFrame, 0); // 发送CAN帧
 }
 
+// 新的关机事件
 void	sCanNewShutdownEvent(void)
 {
-	T_CAN_FRAME strFrame;
-	T_CAN_NEW_ID strId;
-	
-	strId.dwData = 0;
-	strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
-	strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
-	strId.Bit.SourceAddress = bCanLocalId;
-	strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
-	strId.Bit.MessageId = eCAN_MSG_SHUTDOWN_ID;
-	strFrame.Id = strId.dwData;
-	
-	sCanWrite(cBMS_CAN, &strFrame, 0);
+	T_CAN_FRAME strFrame; // CAN帧结构体
+    T_CAN_NEW_ID strId; // CAN帧ID结构体
+    
+    // 初始化CAN帧ID
+    strId.dwData = 0;
+    strId.Bit.FrameMode = eCAN_FRAME_COMMAND;
+    strId.Bit.FunctionCode = eCAN_FUNC_CTRL_EVENT;
+    strId.Bit.SourceAddress = bCanLocalId;
+    strId.Bit.DestinAddress = eCAN_DES_ADDR_BRD;
+    strId.Bit.MessageId = eCAN_MSG_SHUTDOWN_ID;
+    strFrame.Id = strId.dwData;
+    
+    sCanWrite(cBMS_CAN, &strFrame, 0); // 发送CAN帧
 }
 
 void	sCanParallelLogic(INT16U wTimeBase)
@@ -1047,6 +1093,7 @@ void	sCanParallelParsing(T_CAN_NEW_FRAME *pRxFrame)
 	}
 }
 
+// 解析CAN控制事件的函数
 void	sCanControlEventParsing(T_CAN_NEW_FRAME *pRxFrame)
 {
 	switch(pRxFrame->Id.Bit.MessageId)
@@ -1088,6 +1135,7 @@ void	sCanControlEventParsing(T_CAN_NEW_FRAME *pRxFrame)
 	}
 }
 
+//解析EMS数据
 void	sCanEmsDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 {
 	INT16U data;
@@ -1194,6 +1242,7 @@ void	sCanEmsDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 	}
 }
 
+// 解析BMS数据
 void	sCanBmsDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 {
 	union BMS_DATA_TABLE *pData;
@@ -1383,6 +1432,7 @@ void	sCanBmsDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 	}
 }
 
+// 解析用户数据
 void	sCanUserDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 {
 	T_CAN_FRAME strTxFrame;
@@ -1446,6 +1496,7 @@ void	sCanUserDataParsing(T_CAN_NEW_FRAME *pRxFrame)
 	}
 }
 
+// 解析CAN自动广告数据的函数
 void	sCanAutoAdsParsing(T_CAN_FRAME *pData)
 {
 	OS_CPU_SR cpu_sr;
@@ -1546,6 +1597,7 @@ void	sCanAutoAdsParsing(T_CAN_FRAME *pData)
 	}
 }
 
+// 校验CAN自动广告数据
 void	sCanAutoAdsCheck(INT16U wTimeBase)
 {
 	OS_CPU_SR cpu_sr;
@@ -1591,6 +1643,7 @@ void	sCanAutoAdsCheck(INT16U wTimeBase)
 	
 }
 
+//CAN帧自动广告分配
 void	sCanAutoAdsAssign(void)
 {
 	OS_CPU_SR cpu_sr;
@@ -1693,6 +1746,7 @@ void	sCanAutoAdsAssign(void)
 	}
 }
 
+// 同步CAN并机错误信息的函数
 void	sCanParallelErrSync(void)
 {
 	T_CAN_FRAME strFrame;
@@ -1715,8 +1769,10 @@ void	sCanParallelErrSync(void)
 	sCanWrite(cBMS_CAN, &strFrame, 4);
 }
 
+// CAN并机错误保护检查函数
 void sCanParaErrProtChk(void)
 {
+	// 如果并机错误检查计数器超过设定值，或者键地址不为0，则执行并机地址错误处理函数
 	if(++bParallelErrChkCnt >= cCanErrProtCnt || sbGetKeyAddress() != 0)
 	{
 		bParallelErrChkCnt = 0;
@@ -1725,6 +1781,7 @@ void sCanParaErrProtChk(void)
 	}
 	else
 	{
+		// 否则，初始化键处理流程，重新初始化CAN协议
 		sKeyProcessInit();
 //		sSetCanAddress(0);
 //		sSetSciAddress(0);	//1
@@ -1732,6 +1789,7 @@ void sCanParaErrProtChk(void)
 	}
 }
 
+//CAN帧并机错误清除计数器
 void sCanParaErrCntClr(INT16U wTimeBase)
 {
 	dwParallelErrClrCnt += wTimeBase;

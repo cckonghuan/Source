@@ -337,15 +337,18 @@ void	sEepromFrDefaultWrite(const INT16U *Table, INT16U wIndex, INT16U wLen);
 /********************************************************************************
 * Routines' implementations														*
 ********************************************************************************/
+// EEprom初始化
 void	sEepromInitial(void)
 {
 	INT16U	i;
 	INT16U	*ptr1, *ptr2;
 	
+	// 初始化EEPROM状态和安全锁
 	fEepromStatus.data = 0x0000;
 	sSetEepromSecureLock(true);
 	sSetEepromRwEnable(true);
 	
+	// 清零静态参数EEPROM区域
 	ptr1 = (INT16U *)&StrEepromStatic.wLength;
 	ptr2 = (INT16U *)&StrEepromStaticTemp.wLength;
 	for(i = 0; i < cEepromStaticTotalLength; i++)
@@ -356,6 +359,7 @@ void	sEepromInitial(void)
 		ptr2++;
 	}
 	
+	// 清零动态参数EEPROM区域
 	ptr1 = (INT16U *)&StrEepromDynamic.wLength;
 	ptr2 = (INT16U *)&StrEepromDynamicTemp.wLength;
 	for(i = 0; i < cEepromDynamicTotalLength; i++)
@@ -368,6 +372,7 @@ void	sEepromInitial(void)
 	ptr1 = NULL;
 	ptr2 = NULL;
 	
+	// 清零实时参数EEPROM区域
 	ptr1 = (INT16U *)&StrEepromRealtime.wLength;
 	ptr2 = (INT16U *)&StrEepromRealtimeTemp.wLength;
 	for(i = 0; i < cEepromRealtimeTotalLength; i++)
@@ -380,6 +385,7 @@ void	sEepromInitial(void)
 	ptr1 = NULL;
 	ptr2 = NULL;
 	
+	//清零故障纪律EEPROM区域
 	ptr1 = (INT16U *)&StrEepromFaultRecord.wLength;
 	ptr2 = (INT16U *)&StrEepromFaultRecordTemp.wLength;
 	for(i = 0; i < cEepromFrTotalLength; i++)
@@ -392,8 +398,10 @@ void	sEepromInitial(void)
 	ptr1 = NULL;
 	ptr2 = NULL;
 	
+	// 设置虚拟EEPROM地址表
 	for(i = 0; i < NumbOfVar1; i++)
 	{
+		// 设置静态参数EEPROM的虚拟地址
 		if(i < cEepromStaticTotalLength)
 		{
 			VirtAddVarTab1[i] = cEepromStaticStartAddr + i;
@@ -412,6 +420,7 @@ void	sEepromInitial(void)
 		}
 	}
 	
+	// 设置实时参数和故障记录EEPROM区域的虚拟地址
 	for(i = 0; i < NumbOfVar2; i++)
 	{
 		if(i < cEepromRealtimeTotalLength)
@@ -424,18 +433,21 @@ void	sEepromInitial(void)
 		}
 	}
 	
+	// 设置实时参数和故障记录在EEPROM备份区域的虚拟地址
 	for(i = 0; i < NumbOfVar3; i++)
 	{
+		// 设置实时参数EEPROM备份区域的虚拟地址
 		if(i < cEepromRealtimeTotalLength)
 		{
 			VirtAddVarTab3[i] = cEepromRealtimeStartAddr2 + i;
 		}
+		// 设置故障纪录EEPROM备份区域的虚拟地址
 		else if(i < (cEepromRealtimeTotalLength + cEepromFrTotalLength))
 		{
 			VirtAddVarTab3[i] = cEepromFrStartAddr2 + i - cEepromRealtimeTotalLength;
 		}
 	}
-	
+	// 解锁Flash并初始化EEPROM
 	mFLASH_UNLOCK();
 	EE1_Init();
 	EE2_Init();
@@ -443,17 +455,20 @@ void	sEepromInitial(void)
 	mFLASH_LOCK();
 }
 
+//初始化EEPROM任务的优先级和事件
 void	sEepromTaskInitial(INT8U bTask, INT8U bPrio, INT8U bEvent)
 {
 	bEepromTaskPrio[bTask] = bPrio;
 	bEepromTaskEvent[bTask] = bEvent;
 }
 
+//EEPROM状态
 INT8U	sbEepromStaticPop(void)
 {
     INT16U  wEepromDefaultIndex = 0;
     INT16U  wEepromDefaultLen = cEepromStaticTotalLength - 1;
 	
+	// 从EEPROM中读取数据
 	if(sbEepromRead(cEepromStaticStartAddr, 1, (INT16U *)&StrEepromStatic.wLength) == cEepromSuccess)
 	{
 		if((StrEepromStatic.wLength >= 3) && (StrEepromStatic.wLength <= 0x0100))
@@ -515,6 +530,7 @@ INT8U	sbEepromStaticPop(void)
 	return true;
 }
 
+//EEPROM动态
 INT8U	sbEepromDynamicPop(void)
 {
     INT16U  wEepromDefaultIndex = 0;

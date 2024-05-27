@@ -513,7 +513,7 @@ void	sPylonChgDcgDataRead(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLen
 	sbNumToXXXX_16Hex(swGetRecDischargeCurr(), &TxBuff[TxLen]);
 	TxLen += 4;
 	//初始化状态变量为0
-	bStatus = 0;、
+	bStatus = 0;
 
 	//根据BMS的充电、放电状态以及其他参数设置状态变量的各位
 	bStatus += (swGetBmsChargeEnable() << 7);             // 将充电使能状态左移7位后加到bStatus中

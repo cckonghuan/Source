@@ -106,20 +106,20 @@ void	sInterfaceJob(void)
 		{
 			sSciRouting(cHOST_SCI);
 			
-			if(sbGetRouteProt() == cROUTE_PROT_VOLTRONIC)
-			{
-				sVoltronic_ModBusParsing(cHOST_SCI);
-			}
-			else if(sbGetRouteProt() == cROUTE_PROT_PYLON)
+			if(sbGetRouteProt() == cROUTE_PROT_PYLON)
 			{
 				#ifdef PYLON_PROTOCOL_ENABLE
 					sPylontechParsing(cHOST_SCI);
 				#endif
 			}
-            else if(sbGetRouteProt() == cROUTE_PROT_Growatt)
+			else if(sbGetRouteProt() == cROUTE_PROT_VOLTRONIC)
 			{
-				sGroWatt_ModBusParsing(cHOST_SCI);
+				sVoltronic_ModBusParsing(cHOST_SCI);
 			}
+//            else if(sbGetRouteProt() == cROUTE_PROT_Growatt)
+//			{
+//				sGroWatt_ModBusParsing(cHOST_SCI);
+//			}
 			else
 			{
 				sModBusParsing(cHOST_SCI);

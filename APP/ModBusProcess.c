@@ -44,8 +44,8 @@ Description:	None
 #define DBG_CMD_BASE_ADDR		0x1500				// 调试命令起始地址
 #define DBG_CMD_LEN				0x100				// 调试命令长度
 
-#define Growatt_BMS_REG_BASE_ADDR		0			                // BMS数据起始地址
-#define Growatt_BMS_REG_LEN				cBMS_Growatt_FEILD_LEN		// BMS数据长度
+//#define Growatt_BMS_REG_BASE_ADDR		0			                // BMS数据起始地址
+//#define Growatt_BMS_REG_LEN				cBMS_Growatt_FEILD_LEN		// BMS数据长度
 
 #define Voltronic_BMS_REG_BASE_ADDR		0x0001			                // BMS数据起始地址
 #define Voltronic_BMS_REG_LEN			cBMS_Voltronic_FEILD_LEN		// BMS数据长度
@@ -3137,7 +3137,7 @@ void	sSetCommConnected(INT8U sciid, INT8U bStatus)
 {
 	
 }
-
+/*
 void	sGroWatt_ModBusParsing(INT8U sciid)
 {
 	INT8U	*RxBuff;
@@ -3210,7 +3210,8 @@ void	sGrowatt_ModBusRdProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLe
 	INT16U RdAddr, RdNums, wCRC;
 	
 	//CRC校验
-	wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_L] << 8) + RxBuff[RxLen - cMODBUS_CRC_H];
+	//wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_L] << 8) + RxBuff[RxLen - cMODBUS_CRC_H];
+	wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_H] << 8) + RxBuff[RxLen - cMODBUS_CRC_L];
 	if(wCRC != swModbusCrc16(&RxBuff[cMODBUS_ADDR], (RxLen - cMODBUS_CRC_LEN)))
 	{
 		sGrowatt_BuildFaultFrame(RxBuff, TxBuff, sciid, cErr_CrcErr);
@@ -3251,7 +3252,8 @@ void	sGrowatt_ModBusWrProc(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT8U RxLe
 	INT16U WrAddr, WrNums, wCRC;
 	
 	// 
-	wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_L] << 8) + RxBuff[RxLen - cMODBUS_CRC_H];
+	//wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_L] << 8) + RxBuff[RxLen - cMODBUS_CRC_H];
+	wCRC = ((INT16U)RxBuff[RxLen - cMODBUS_CRC_H] << 8) + RxBuff[RxLen - cMODBUS_CRC_L];
 	if(wCRC != swModbusCrc16(&RxBuff[cMODBUS_ADDR], (RxLen - cMODBUS_CRC_LEN)))
 	{
 		sGrowatt_BuildFaultFrame(RxBuff, TxBuff, sciid, cErr_CrcErr);
@@ -3317,8 +3319,10 @@ void	sGrowatt_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (*R
 	}
 	
 	wCRC = swModbusCrc16(&TxBuff[cMODBUS_ADDR], TxLen);
-    TxBuff[TxLen++] = wCRC & 0x00FF;
+  TxBuff[TxLen++] = wCRC & 0x00FF;
 	TxBuff[TxLen++] = wCRC >> 8;
+//	TxBuff[TxLen++] = wCRC >> 8;
+//	TxBuff[TxLen++] = wCRC & 0x00FF;
 	
 	if(sSciGetTxStatus(sciid) != cSciTxBusy)
 	{
@@ -3405,7 +3409,7 @@ INT8U	swGrowatt_EESettingWrite(INT16U WrAddr, INT16U WrData)
 {
 	return 0;
 }
-
+*/
 void	sVoltronic_ModBusParsing(INT8U sciid)
 {
 	INT8U	*RxBuff;
@@ -3503,8 +3507,8 @@ void	sVoltronic_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (
 	
 	TxBuff[cMODBUS_ADDR] = RxBuff[cMODBUS_ADDR];
 	TxBuff[cMODBUS_CMD] = RxBuff[cMODBUS_CMD];
-	TxBuff[3] = (RdNums << 1) >> 8;
-    TxBuff[2] = (RdNums << 1) & 0x00FF;
+	TxBuff[2] = (RdNums << 1) >> 8;
+  TxBuff[3] = (RdNums << 1) & 0x00FF;
 	TxLen = 4;
 	
 	for(i = 0; i < RdNums; i++)
@@ -3518,7 +3522,9 @@ void	sVoltronic_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (
 	
 	wCRC = swModbusCrc16(&TxBuff[cMODBUS_ADDR], TxLen);
 	TxBuff[TxLen++] = wCRC >> 8;
-    TxBuff[TxLen++] = wCRC & 0x00FF;
+	TxBuff[TxLen++] = wCRC & 0x00FF;
+	
+    
 	
 	if(sSciGetTxStatus(sciid) != cSciTxBusy)
 	{

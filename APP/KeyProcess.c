@@ -177,88 +177,93 @@ void sKeyPWRScanProc(INT16U wOffCnt, INT16U wForceCnt)
     }
 }
 
-void	sKeyLCDScanProc(INT16U wOffCnt, INT16U wDbgCnt)
+void sKeyLCDScanProc(INT16U wOffCnt, INT16U wDbgCnt)
 {
-	static INT8U	key_scan_mode = cKEY_SCAN_READY;
-	static INT16U	wPressCnt = 0;
-	
-	switch(key_scan_mode)
-	{
-		case cKEY_SCAN_READY:
-			wPressCnt = 0;
-			if(mIS_LCD_KEY2_PRESSED())
-			{
-				wPressCnt++;
-				key_scan_mode = cKEY_SCAN_PRESS;
-			}
-		break;
-		case cKEY_SCAN_PRESS:
-			if(mIS_LCD_KEY2_PRESSED())
-			{
-				if(wPressCnt < cKEY_BIT16_COUNT_MAX)
-				{
-					wPressCnt++;
-				}
-				
-				if(wPressCnt >= wDbgCnt)
-				{
-					wPressCnt = 0;
-					sRstLCDLoopCnt();
-					sSetKeyStatusDebugMode(true);
-					key_scan_mode = cKEY_SCAN_STOP;
-				}
-			}
-			else
-			{
-				key_scan_mode = cKEY_SCAN_STOP;
-			}
-		break;
-		case cKEY_SCAN_STOP:
-			if(mIS_LCD_KEY2_RELEASE())
-			{
-				if(wPressCnt >= wOffCnt)
-				{
-					wPressCnt = 0;
-					sSetKeyStatusLCDMode(true);
-				}
-				key_scan_mode = cKEY_SCAN_READY;
-			}
-		break;
-		default:
-			key_scan_mode = cKEY_SCAN_READY;
-		break;
-	}
+    static INT8U key_scan_mode = cKEY_SCAN_READY; // 按键扫描模式
+    static INT16U wPressCnt = 0; // 按键按下计数器
+
+    switch(key_scan_mode)
+    {
+        case cKEY_SCAN_READY: // 准备扫描模式
+            wPressCnt = 0;
+            if(mIS_LCD_KEY2_PRESSED()) // 检查LCD按键2是否按下
+            {
+                wPressCnt++;
+                key_scan_mode = cKEY_SCAN_PRESS; // 切换到按键按下模式
+            }
+        break;
+        case cKEY_SCAN_PRESS: // 按键按下模式
+            if(mIS_LCD_KEY2_PRESSED()) // 按键保持按下状态
+            {
+                if(wPressCnt < cKEY_BIT16_COUNT_MAX) // 如果按键计数未到最大值，继续计数
+                {
+                    wPressCnt++;
+                }
+
+                if(wPressCnt >= wDbgCnt) // 如果按键按下计数超过调试计数
+                {
+                    wPressCnt = 0;
+                    sRstLCDLoopCnt(); // 重置LCD循环计数
+                    sSetKeyStatusDebugMode(true); // 设置按键调试模式状态
+                    key_scan_mode = cKEY_SCAN_STOP; // 切换到按键停止模式
+                }
+            }
+            else // 按键已释放
+            {
+                key_scan_mode = cKEY_SCAN_STOP; // 切换到按键停止模式
+            }
+        break;
+        case cKEY_SCAN_STOP: // 按键停止模式
+            if(mIS_LCD_KEY2_RELEASE()) // 如果按键已释放
+            {
+                if(wPressCnt >= wOffCnt) // 如果按键按下计数超过关机计数
+                {
+                    wPressCnt = 0;
+                    sSetKeyStatusLCDMode(true); // 设置按键LCD模式状态
+                }
+                key_scan_mode = cKEY_SCAN_READY; // 切换到准备扫描模式
+            }
+        break;
+        default:
+            key_scan_mode = cKEY_SCAN_READY; // 默认切换到准备扫描模式
+        break;
+    }
 }
 
-void	sKeyForceOnTimeout(INT16U wTimeOut)
+void sKeyForceOnTimeout(INT16U wTimeOut)
 {
-	static INT16U wChkCnt = 0;
-	
-	if(sbGetKeyStatusForcedOn())
-	{
-		if(++wChkCnt >= wTimeOut)
-		{
-			wChkCnt = 0;
-			sSetKeyStatusForcedOn(false);
-		}
-	}
-	else
-	{
-		if((swGetKeyCode() & cKEY_PRESS_FORCEON_BIT) != 0)
-		{
-			wChkCnt = 0;
-			sSetKeyStatusForcedOn(true);
-			sClrKeyCode(cKEY_PRESS_FORCEON_BIT);
-		}
-	}
-}
+    static INT16U wChkCnt = 0; // 检查计数器
 
-void	sKeyTurnOffProc(void)
+    if(sbGetKeyStatusForcedOn()) // 检查按键是否强制开机
+    {
+        if(++wChkCnt >= wTimeOut) // 如果计数器超过超时时间
+        {
+            wChkCnt = 0;
+            sSetKeyStatusForcedOn(false); // 取消强制开机状态
+        }
+    }
+    else
+    {
+        if((swGetKeyCode() & cKEY_PRESS_FORCEON_BIT) != 0) // 检查按键码是否包含强制开机位
+        {
+            wChkCnt = 0;
+            sSetKeyStatusForcedOn(true); // 设置强制开机状态
+            sClrKeyCode(cKEY_PRESS_FORCEON_BIT); // 清除按键码中的强制开机位
+        }
+    }
+}
+void sKeyTurnOffProc(void)
 {
+	// 检查关机按键是否被按下
 	if((swGetKeyCode() & cKEY_PRESS_TURNOFF_BIT) != 0)
 	{
+		// 关机按键被按下，设置电池管理系统（BMS）为并联关机模式
 		sSetBmsParallelShutdown(true);
+
+		// 向优先级为 cPrioSuper 的任务发送关机事件 eSuperToShutdown
 		OSEventSend(cPrioSuper, eSuperToShutdown);
+
+		// 清除关机按键的标志位
 		sClrKeyCode(cKEY_PRESS_TURNOFF_BIT);
 	}
 }

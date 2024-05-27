@@ -77,6 +77,7 @@ union CAN_STATUS_TABLE
 /********************************************************************************
 * Routines' implementations														*
 ********************************************************************************/
+//can初始化
 void	sCanInitial(void)
 {
 	bCanDataRecv = 0;
@@ -141,16 +142,18 @@ void	sCanTimerPolling(INT16U wTimeBase)
 		}
 	}
 }
-
-void	sCanToShutdownParsing(void)
-{
-	if(sbGetBmsMode() != cShutdownMode)
-	{
-		sSetBmsParallelShutdown(true);
-		OSEventSend(cPrioSuper, eSuperToShutdown);
-	}
+// 解析CAN发送到关机的指令
+void sCanToShutdownParsing(void) {
+    // 如果当前BMS模式不是关机模式
+    if (sbGetBmsMode() != cShutdownMode) {
+        // 设置BMS并机关机标志为true
+        sSetBmsParallelShutdown(true);
+        // 发送超级任务到关机事件
+        OSEventSend(cPrioSuper, eSuperToShutdown);
+    }
 }
 
+//CAN发送到关机命令
 void	sCanToShutdownCmd(void)
 {
 	if(sbGetCanAddress() != 0)
@@ -159,16 +162,20 @@ void	sCanToShutdownCmd(void)
 	}
 }
 
+//并机地址错误处理函数
 void	sCanParallelAddrErr(void)
 {
+	// 如果当前BMS故障代码为0
 	if(sbGetBmsFaultCode() == 0)
 	{
+		// 设置BMS故障代码为为并机故障
 		sSetBmsFaultCode(cParallelFaultId);
 	}
 	sSetBmsFaultFlag(cParallelFault);
 	OSEventSend(cPrioSuper,eSuperToFault);
 }
 
+//CAN帧写函数
 void	sCanWrite(INT8U canId, T_CAN_FRAME *pFrame, INT8U bLen)
 {
 	T_CanFrame TxFrame;
@@ -180,14 +187,20 @@ void	sCanWrite(INT8U canId, T_CAN_FRAME *pFrame, INT8U bLen)
 	CAN_SendFrame(canId, &TxFrame);
 }
 
+//发送标准CAN帧
 void	sCanWriteStandard(INT8U canId, T_CAN_FRAME *pFrame, INT8U bLen)
 {
+	// 定义CAN帧结构体变量
 	T_CanFrame TxFrame;
 	
+	// 将CAN帧ID和帧编码到TxFrame.TxR中
 	TxFrame.IxR = (pFrame->Id << 21) + (CAN_Id_Standard | CAN_RTR_Data);
+	// 设置数据长度
 	TxFrame.DTxR = bLen;	// 0-8之间
+	// 将数据写入TxFrame中
 	TxFrame.Data.u32[0] = pFrame->Data.dwData[0];
 	TxFrame.Data.u32[1] = pFrame->Data.dwData[1];
+	// 调用CAN_SendFrame函数发送CAN帧
 	CAN_SendFrame(canId, &TxFrame);
 }
 

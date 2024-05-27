@@ -531,143 +531,143 @@ union BMS_INFORMATION_TABLE
 	INT16U	Table[cBMS_INFORMATION_FEILD_LEN];
 };
 
-struct	Growatt_BMS_DATA_FEILD
-{
-    INT16U Reserved1;
-	INT16U FW_VER;
-	INT16U Gauge_Version;
-	INT16U FR_Version_Low;
-	INT16U FR_Version_High;
-	INT16U Date_Time1;
-	INT16U Date_Time2;
-	INT16U Date_Time3;
-	INT16S Date_Time4;
-	INT16U Bar_Code12;
-	INT16U Bar_Code34;
-	INT16U Bar_Code56;
-	INT16U Bar_Code78;
-	INT16U Company_Code_Low;
-	INT16U Company_Code_High;
-	INT16U Using_Cap;
-    
-	INT16U Gauge_IC_current;//10mA
-    union BMS_time
-    {
-        struct BMS_time_BIT_FEILD
-        {
-            INT16U secod:6;
-            INT16U minute:6;
-            INT16U hour:5;
-            INT16U day:5;
-            INT16U Month:4;
-            INT16U Year:6;
-        } bits;
-        INT32U dataTime;
-    }DataTime;
-    
-	union BMS_status
-    {
-        struct BMS_status_BIT_FEILD
-        {
-            INT16U status:2;
-            INT16U Err_Bit_falg:1;
-            INT16U cell_banlace_status:1;
-            INT16U sleep_status:1;
-            INT16U op_dischg_status:1;
-            INT16U op_chg_status:1;
-            INT16U Battery_terminal_status:1;
-            INT16U Master_box_Operation_Mode:2;
-            INT16U SP_status:2;
-            INT16U Force_chg_status:1;
-            INT16U Reserved:3;
-        } bits;
-        INT16U PackStatus;
-    }BMS_STATUS;
-    
-	union BMS_err
-    {
-        struct BMS_err_BIT_FEILD
-        {
-            INT16U over_dischg_curr:1;
-            INT16U short_circuit:1;
-            INT16U over_volt:1;
-            INT16U under_volt:1;
-            
-            INT16U over_temp_dischg:1;
-            INT16U over_temp_chg:1;
-            INT16U under_temp_dischg:1;
-            INT16U under_temp_chg:1;
-            
-            INT16U soft_start_fail:1;
-            INT16U Permanent_Fault:1;
-            INT16U Delta_V_Fail:1;
-            INT16U over_current_charge:1;
+//struct	Growatt_BMS_DATA_FEILD
+//{
+//    INT16U Reserved1;
+//	INT16U FW_VER;
+//	INT16U Gauge_Version;
+//	INT16U FR_Version_Low;
+//	INT16U FR_Version_High;
+//	INT16U Date_Time1;
+//	INT16U Date_Time2;
+//	INT16U Date_Time3;
+//	INT16S Date_Time4;
+//	INT16U Bar_Code12;
+//	INT16U Bar_Code34;
+//	INT16U Bar_Code56;
+//	INT16U Bar_Code78;
+//	INT16U Company_Code_Low;
+//	INT16U Company_Code_High;
+//	INT16U Using_Cap;
+//    
+//	INT16U Gauge_IC_current;//10mA
+//    union BMS_time
+//    {
+//        struct BMS_time_BIT_FEILD
+//        {
+//            INT16U secod:6;
+//            INT16U minute:6;
+//            INT16U hour:5;
+//            INT16U day:5;
+//            INT16U Month:4;
+//            INT16U Year:6;
+//        } bits;
+//        INT32U dataTime;
+//    }DataTime;
+//    
+//	union BMS_status
+//    {
+//        struct BMS_status_BIT_FEILD
+//        {
+//            INT16U status:2;
+//            INT16U Err_Bit_falg:1;
+//            INT16U cell_banlace_status:1;
+//            INT16U sleep_status:1;
+//            INT16U op_dischg_status:1;
+//            INT16U op_chg_status:1;
+//            INT16U Battery_terminal_status:1;
+//            INT16U Master_box_Operation_Mode:2;
+//            INT16U SP_status:2;
+//            INT16U Force_chg_status:1;
+//            INT16U Reserved:3;
+//        } bits;
+//        INT16U PackStatus;
+//    }BMS_STATUS;
+//    
+//	union BMS_err
+//    {
+//        struct BMS_err_BIT_FEILD
+//        {
+//            INT16U over_dischg_curr:1;
+//            INT16U short_circuit:1;
+//            INT16U over_volt:1;
+//            INT16U under_volt:1;
+//            
+//            INT16U over_temp_dischg:1;
+//            INT16U over_temp_chg:1;
+//            INT16U under_temp_dischg:1;
+//            INT16U under_temp_chg:1;
+//            
+//            INT16U soft_start_fail:1;
+//            INT16U Permanent_Fault:1;
+//            INT16U Delta_V_Fail:1;
+//            INT16U over_current_charge:1;
 
-            INT16U over_temp_mos:1;
-            INT16U over_temp_enviorment:1;
-            INT16U under_temp_enviorment:1;
-            INT16U Reserved:1;
-        } bits;
-        INT16U Err_word;
-    }BMS_Err;
-    
-	INT16U SOC;//%
-	INT16U Voltage;//10mV
-	INT16U Current;//10mA
-	INT16U Temperature;//¡æ
-	INT16U ChargeCurrentLimit;
-	INT16U Gauge_RM;//10mAH
-	INT16U Gauge_FCC;//10mAH
+//            INT16U over_temp_mos:1;
+//            INT16U over_temp_enviorment:1;
+//            INT16U under_temp_enviorment:1;
+//            INT16U Reserved:1;
+//        } bits;
+//        INT16U Err_word;
+//    }BMS_Err;
+//    
+//	INT16U SOC;//%
+//	INT16U Voltage;//10mV
+//	INT16U Current;//10mA
+//	INT16U Temperature;//¡æ
+//	INT16U ChargeCurrentLimit;
+//	INT16U Gauge_RM;//10mAH
+//	INT16U Gauge_FCC;//10mAH
 
-    union BMS_ver
-    {
-        struct BMS_ver_BIT_FEILD
-        {
-            INT16U hardware_ver:8;
-            INT16U software_ver:8;
-        } bits;
-        INT16U Ver_word;
-    }BMS_Ver;
-    
-	INT16U Delta;
-	INT16U Cycle_Count;
-	INT16U RSVD_For_Master_Box;
-	INT16U SOH;
-	INT16U CV_Voltage;//10mV
-	INT16U Warning;
-	INT16U MaxDischargeCurr;
-    INT16U Extended_Error;
-    INT16U CellVoltMax;
-    INT16U CellVoltMin;
-    INT16U CellVoltMaxNo;
-	INT16U CellVoltMinNo;
-    INT16U Cell_Series;
-    INT16U wReserved1[7];
-    
-	INT16U wReserved2[0x40];
-	INT16U CellVolt01;
-	INT16U CellVolt02;
-	INT16U CellVolt03;
-	INT16U CellVolt04;
-	INT16U CellVolt05;
-	INT16U CellVolt06;
-	INT16U CellVolt07;
-	INT16U CellVolt08;
-	INT16U CellVolt09;
-	INT16U CellVolt10;
-	INT16U CellVolt11;
-	INT16U CellVolt12;
-	INT16U CellVolt13;
-	INT16U CellVolt14;
-	INT16U CellVolt15;
-	INT16U CellVolt16;
-};
-#define	cBMS_Growatt_FEILD_LEN	sizeof(struct Growatt_BMS_DATA_FEILD)/2
-union BMS_Growatt_TABLE
-{
-	struct	Growatt_BMS_DATA_FEILD	Field;
-	INT16U	Table[cBMS_Growatt_FEILD_LEN];
-};
+//    union BMS_ver
+//    {
+//        struct BMS_ver_BIT_FEILD
+//        {
+//            INT16U hardware_ver:8;
+//            INT16U software_ver:8;
+//        } bits;
+//        INT16U Ver_word;
+//    }BMS_Ver;
+//    
+//	INT16U Delta;
+//	INT16U Cycle_Count;
+//	INT16U RSVD_For_Master_Box;
+//	INT16U SOH;
+//	INT16U CV_Voltage;//10mV
+//	INT16U Warning;
+//	INT16U MaxDischargeCurr;
+//    INT16U Extended_Error;
+//    INT16U CellVoltMax;
+//    INT16U CellVoltMin;
+//    INT16U CellVoltMaxNo;
+//	INT16U CellVoltMinNo;
+//    INT16U Cell_Series;
+//    INT16U wReserved1[7];
+//    
+//	INT16U wReserved2[0x40];
+//	INT16U CellVolt01;
+//	INT16U CellVolt02;
+//	INT16U CellVolt03;
+//	INT16U CellVolt04;
+//	INT16U CellVolt05;
+//	INT16U CellVolt06;
+//	INT16U CellVolt07;
+//	INT16U CellVolt08;
+//	INT16U CellVolt09;
+//	INT16U CellVolt10;
+//	INT16U CellVolt11;
+//	INT16U CellVolt12;
+//	INT16U CellVolt13;
+//	INT16U CellVolt14;
+//	INT16U CellVolt15;
+//	INT16U CellVolt16;
+//};
+//#define	cBMS_Growatt_FEILD_LEN	sizeof(struct Growatt_BMS_DATA_FEILD)/2
+//union BMS_Growatt_TABLE
+//{
+//	struct	Growatt_BMS_DATA_FEILD	Field;
+//	INT16U	Table[cBMS_Growatt_FEILD_LEN];
+//};
 
 struct	Voltronic_BMS_DATA_FEILD
 {
@@ -981,8 +981,8 @@ BMS_PROCESS	void	sSetBmsDataReservd5(INT8U bNo, INT16U wData);
 BMS_PROCESS	void	sSetBmsDataReservd6(INT8U bNo, INT16U wData);
 BMS_PROCESS	void	sSetBmsDataReservd7(INT8U bNo, INT16U wData);
 BMS_PROCESS	void	sSetBmsDataReservd8(INT8U bNo, INT16U wData);
-BMS_PROCESS INT16U	swGetGrowatt_BmsDataLocal(INT16U wAddrOffset);
-BMS_PROCESS void	sBmsGrowatt_Data_Update(void);
+//BMS_PROCESS INT16U	swGetGrowatt_BmsDataLocal(INT16U wAddrOffset);
+//BMS_PROCESS void	sBmsGrowatt_Data_Update(void);
 BMS_PROCESS INT16U	swGetVoltronic_BmsDataLocal(INT16U wAddrOffset);
 BMS_PROCESS void	sBmsVoltronic_Data_Update(void);
 

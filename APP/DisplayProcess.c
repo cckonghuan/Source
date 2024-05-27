@@ -62,7 +62,7 @@ INT16U	wDisplayBmsSoc;		// 0.1%
 /********************************************************************************
 * Internal variables															*
 ********************************************************************************/
-union DISPLAY_STATUS_TABLE
+union DISPLAY_STATUS_TABLE//显示标志列表
 {
 	struct DISPLAY_STATUS_BIT_FEILD
 	{
@@ -95,35 +95,38 @@ INT8U	bDisplayKeyTimeBase;
 /********************************************************************************
 * Routines' implementations														*
 ********************************************************************************/
+// 显示流程初始化
 void	sDisplayProcessInit(void)
 {
-	bDisplayBmsMode = 0;
-	bDisplayBmsStatus = 0;
-	wDisplayBmsSoc = cDISPLAY_SOC_EMPTY;
+	bDisplayBmsMode = 0;//BMS模式初始化为0
+	bDisplayBmsStatus = 0; //BMS状态初始化为0
+	wDisplayBmsSoc = cDISPLAY_SOC_EMPTY;//SOC初始化为空
 	
-	fDisplayStatus.data = 0;
-	wDisplaySocCnt = 0;
-	wDisplaySocCntBias = 0;
-	wDisplaySocRedCnt = 0;
+	fDisplayStatus.data = 0;//显示状态初始化为0
+	wDisplaySocCnt = 0;//显示SOC计数器初始化为0
+	wDisplaySocCntBias = 0;// SOC计数器偏移初始化为0
+	wDisplaySocRedCnt = 0;// SOC红色计数器初始化为0
 	wDisplayKeyCnt = 0;
 	
-	bDisplaySocTimeBase = 1;
-	bDisplayKeyTimeBase = 1;
+	bDisplaySocTimeBase = 1;//SOC基准时间初始化为1
+	bDisplayKeyTimeBase = 1;// 按键时间基准初始化为1
 }
 
+//SOC显示函数
 void    sDisplaySoc(INT16U wTimeBase)
 {
-	wDisplaySocRedCnt += wTimeBase;
+	wDisplaySocRedCnt += wTimeBase;//SOC红色计数器增加
 	if(wDisplaySocRedCnt >= cDISPLAY_T200MS)
 	{
-		wDisplaySocRedCnt = 0;
+		wDisplaySocRedCnt = 0;//超过200ms，红色计数器归零
 	}
 	
-	wDisplaySocCnt += wTimeBase;
+	wDisplaySocCnt += wTimeBase;//SOC计数器增加
 	if(wDisplaySocCnt >= cDISPLAY_T5S)
 	{
-		sCanSyncDisplaySocCommand();
+		sCanSyncDisplaySocCommand();//CAN同步显示SOC命令
 		
+		//根据SOC值设置偏移量
 		if(wDisplayBmsSoc < cDISPLAY_SOC_25PCT)
 		{
 			wDisplaySocCntBias = 0;
@@ -145,22 +148,23 @@ void    sDisplaySoc(INT16U wTimeBase)
 			wDisplaySocCntBias = cDISPLAY_T4S;
 		}
 		
-		bDisplaySocTimeBase = wTimeBase;
-		wDisplaySocCnt = wDisplaySocCntBias;
+		bDisplaySocTimeBase = wTimeBase; //设置SOC时间寄存器
+		wDisplaySocCnt = wDisplaySocCntBias;//SOC计数器设置为偏移量
 	}
 	
+	//根据BMS模式、状态和SOC值设置LED和显示
 	if(bDisplayBmsMode == cPowerOnMode)
 	{
-		mDISPLAY_SOC_FULL();
-		mLED_SOC_RED_ON();
+		mDISPLAY_SOC_FULL();//充满
+		mLED_SOC_RED_ON();//红色LED亮
 	}
 	else if((bDisplayBmsMode == cShutdownMode) || (bDisplayBmsMode == cUpgradeMode) \
 		|| (bDisplayBmsMode == cSleepMode) || (bDisplayBmsMode == cTestMode))
 	{
-		mDISPLAY_SOC_EMPTY();
-		mLED_SOC_RED_OFF();
+		mDISPLAY_SOC_EMPTY();//空
+		mLED_SOC_RED_OFF();//红色LED灭
 	}
-	else if(bDisplayBmsMode == cFaultMode)
+	else if(bDisplayBmsMode == cFaultMode)//故障模式
 	{
 		mLED_SOC_RED_OFF();
 		if(sbGetBmsFaultCode() == cBattVoltHiId)
@@ -220,7 +224,7 @@ void    sDisplaySoc(INT16U wTimeBase)
 			mDISPLAY_ALARM_NULL();
 		}
 	}
-	else if(bDisplayBmsStatus == cDISPLAY_STATUS_CHG)
+	else if(bDisplayBmsStatus == cDISPLAY_STATUS_CHG)//充电状态
 	{
 		mLED_SOC_RED_OFF();
 		if(wDisplaySocCnt < cDISPLAY_T1S)
@@ -293,7 +297,7 @@ void    sDisplaySoc(INT16U wTimeBase)
 	}
 }
 
-void    sDisplayKey(INT16U wTimeBase)
+void    sDisplayKey(INT16U wTimeBase)//按键显示
 {
 	wDisplayKeyCnt += wTimeBase;
 	if(wDisplayKeyCnt >= cDISPLAY_T2S)
@@ -343,13 +347,14 @@ void    sDisplayKey(INT16U wTimeBase)
 	}
 }
 
+// 根据标志位决定是否同步显示SOC计数器
 void    sDisplaySocSync(INT8U bFlag)
 {
 	INT16U wTemp;
 	
 	if(bFlag)
 	{
-		wTemp = (cDISPLAY_T5S + wDisplaySocCntBias) >> 1;
+		wTemp = (cDISPLAY_T5S + wDisplaySocCntBias) >> 1;// 计算临时值
 		if(wDisplaySocCnt > wTemp)
 		{
 			wDisplaySocCnt += bDisplaySocTimeBase;
@@ -368,6 +373,7 @@ void    sDisplaySocSync(INT8U bFlag)
 	}
 }
 
+//根据标志位决定是否同步按键计数器
 void    sDisplayKeySync(INT8U bFlag)
 {
 	if(bFlag)

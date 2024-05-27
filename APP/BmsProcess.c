@@ -52,8 +52,8 @@ union BMS_DATA_TABLE *pBmsDataLocal;
 union BMS2_DATA_TABLE strBms2Data;
 union BMS2_DATA_TABLE *pBms2DataLocal;
 union BMS_INFORMATION_TABLE strBmsInformationData;
-union BMS_Growatt_TABLE *pBmsGrowatt;
-union BMS_Growatt_TABLE strBmsGrowatt;
+//union BMS_Growatt_TABLE *pBmsGrowatt;
+//union BMS_Growatt_TABLE strBmsGrowatt;
 union BMS_Voltronic_TABLE *pBmsVoltronic;
 union BMS_Voltronic_TABLE strBmsVoltronic;
 
@@ -185,8 +185,8 @@ void	sBmsInitial(void)
 	}
 	//初始化BMS2本地数据指针
 	pBms2DataLocal = &strBms2Data;
-	// 初始化Growatt BMS数据指针
-    pBmsGrowatt = &strBmsGrowatt;
+//	// 初始化Growatt BMS数据指针
+//    pBmsGrowatt = &strBmsGrowatt;
 	// 初始化Voltronic BMS数据指针
 	pBmsVoltronic = &strBmsVoltronic;
 }
@@ -1571,10 +1571,10 @@ void	sBmsLossToOffChk(INT16U wFilter)
 void	sBmsSoftStartChk(INT16U wFilter, INT16U wTimeOut)
 {
 	static INT16U wChkCnt = 0;
-	
+	//如果BMS模式为电池模式
 	if(bBmsMode == cBatteryMode)
 	{
-		switch(bSoftStartMode)
+		switch(bSoftStartMode)//软启动模式
 		{
 			case cSS_MODE_STANDBY:
 				;
@@ -1638,6 +1638,7 @@ void	sBmsSoftStartChk(INT16U wFilter, INT16U wTimeOut)
 	}
 }
 
+//BMS状态更新
 void	sBmsStatusUpdate(void)
 {
 	// 
@@ -1785,7 +1786,13 @@ void	sBmsStatusUpdate(void)
 	fBmsStatusOld.bits.bChgForceFlag = fBmsStatus.bits.FullCharge;
 	fBmsStatusOld.bits.bDcgAllowFlag = fBmsStatus.bits.DischargeEnable;
 }
-
+/*
+ * 函数：swBmsChargeDerated
+ * -----------------------
+ * 此函数用于计算根据电池状态限制后的充电电流。
+ * 返回：
+ *   - 计算后的充电电流（单位：mA）
+ */
 INT16U	swBmsChargeDerated(void)
 {
 	INT16U wChargeCurr1 = 0;
@@ -1794,13 +1801,13 @@ INT16U	swBmsChargeDerated(void)
 	INT16S wMaxVolt;
 	INT16S wMinVolt;
 	
-	wMaxVolt = swGetMaxCellVoltNew();
-	wMinVolt = swGetMinCellVoltNew();
+	wMaxVolt = swGetMaxCellVoltNew();//最高电压
+	wMinVolt = swGetMinCellVoltNew();//最低电压
 	if(wMaxVolt <= 3400)
 	{
-		wChargeCurr1 = swGetEepromBattChgCurrHiAlm();
+		wChargeCurr1 = swGetEepromBattChgCurrHiAlm();//获取充电电流
 	}
-	else if(wMaxVolt >= swGetEepromCellVoltHiAlm())
+	else if(wMaxVolt >= swGetEepromCellVoltHiAlm())//如果最高电压大于EEPROM电压
 	{
 		wChargeCurr1 = 50;
 	}
@@ -1809,7 +1816,7 @@ INT16U	swBmsChargeDerated(void)
 		wChargeCurr1 = ((INT32S)((INT16S)swGetEepromCellVoltHiAlm() - wMaxVolt) << 7) / ((INT16S)swGetEepromCellVoltHiAlm() - 3400);
 		wChargeCurr1 = ((INT32U)wChargeCurr1 * swGetEepromBattChgCurrHiAlm()) >> 7;
 	}
-	
+	// 计算根据最低电压限制后的充电电流
 	if(wMinVolt >= 3000)
 	{
 		wChargeCurr2 = swGetEepromBattChgCurrHiAlm();
@@ -1823,8 +1830,8 @@ INT16U	swBmsChargeDerated(void)
 		wChargeCurr2 = ((INT32S)(wMinVolt - swGetEepromCellVoltLoAlm()) << 7) / (3000 - (INT16S)swGetEepromCellVoltLoAlm());
 		wChargeCurr2 = ((INT32U)wChargeCurr2 * swGetEepromBattChgCurrHiAlm()) >> 7;
 	}
-	
-	if(sbGetCellChgTempHiAlm() || sbGetCellChgTempLoAlm())
+	// 根据充电温度限制调整充电电流
+	if(sbGetCellChgTempHiAlm() || sbGetCellChgTempLoAlm())//充电高位和低位其中有一个为高
 	{
 		wChargeCurr3 = swGetEepromBattChgCurrHiAlm() >> 1;
 	}
@@ -1832,7 +1839,7 @@ INT16U	swBmsChargeDerated(void)
 	{
 		wChargeCurr3 = swGetEepromBattChgCurrHiAlm();
 	}
-	
+	// 取三者中的最小值作为充电电流
 	if(wChargeCurr1 > wChargeCurr2)
 	{
 		wChargeCurr1 = wChargeCurr2;
@@ -1848,29 +1855,31 @@ INT16U	swBmsChargeDerated(void)
 	return wChargeCurr1;
 }
 
+// 计算放电时的允许最大电流
 INT16U	swBmsDischargeDerated(void)
 {
-	INT16U wDischargeCurr1 = 0;
-	INT16U wDischargeCurr2 = 0;
+	INT16U wDischargeCurr1 = 0;// 存储第一种情况下的放电电流
+	INT16U wDischargeCurr2 = 0;// 存储第二章情况下的放电电流
 	
-	if(swGetMinCellVoltNew() >= 3000)
+	if(swGetMinCellVoltNew() >= 3000)//最小电压>30V
 	{
-		wDischargeCurr1 = swGetEepromBattDcgCurrHiAlm();
-	}
+		wDischargeCurr1 = swGetEepromBattDcgCurrHiAlm();// 设为存储在EEPROM中的放电高限电流
+    }
 	else
 	{
-		wDischargeCurr1 = swGetEepromBattDcgCurrHiAlm() >> 1;
+		wDischargeCurr1 = swGetEepromBattDcgCurrHiAlm() >> 1;// 否则将放电电流设为放电高限电流的一半
 	}
 	
-	if(sbGetCellDcgTempHiAlm() || sbGetCellDcgTempLoAlm())
+	 // 检查是否有任何一个单体电池的放电温度高限或低限报警触发
+    if (sbGetCellDcgTempHiAlm() || sbGetCellDcgTempLoAlm()) 
 	{
-		wDischargeCurr2 = swGetEepromBattDcgCurrHiAlm() >> 1;
-	}
-	else
+        wDischargeCurr2 = swGetEepromBattDcgCurrHiAlm() >> 1; // 如果是，则将放电电流设为放电高限电流的一半
+    } 
+	else 
 	{
-		wDischargeCurr2 = swGetEepromBattDcgCurrHiAlm();
-	}
-	
+        wDischargeCurr2 = swGetEepromBattDcgCurrHiAlm(); // 否则将放电电流设为存储在EEPROM中的放电高限电流
+    }
+	// 返回两种情况下的放电电流的较小值
 	if(wDischargeCurr1 > wDischargeCurr2)
 	{
 		wDischargeCurr1 = wDischargeCurr2;
@@ -1878,16 +1887,21 @@ INT16U	swBmsDischargeDerated(void)
 	return wDischargeCurr1;
 }
 
+//更新BMS数据
 void	sBmsDataUpdate(void)
 {
-	INT8U i;
+	INT8U i;// 循环变量
 	
+	// 遍历所有并机板的数据
 	for(i = 0; i < BMS_PARALLEL_NUM_MAX; i++)
 	{
+		// 如果当前并机板的CAN地址不是i
 		if(sbGetCanAddress() != i)
 		{
+			// 检查并设置CAN并机标志位中的第i位是否置位
 			if(CHKNBIT(sdwGetCanParallelFlag(), i))
 			{
+				// 清空第i个并机板数据结构的内存
 				memset(&strBmsData[i], 0, sizeof(union BMS_DATA_TABLE));
 			}
 		}
@@ -1895,118 +1909,120 @@ void	sBmsDataUpdate(void)
 	
 	sBmsDataLocalUpdate();
 	sBms2DataLocalUpdate();
-    sBmsGrowatt_Data_Update();
+//    sBmsGrowatt_Data_Update();
     sBmsVoltronic_Data_Update();
 }
 
-void	sBmsGrowatt_Data_Update(void)
-{
-	INT16U *q;
-	INT8U i;
-	
-	pBmsGrowatt->Field.Reserved1 = 0;
-    pBmsGrowatt->Field.FW_VER = 1;
-    pBmsGrowatt->Field.Gauge_Version = 1;
-    pBmsGrowatt->Field.FR_Version_Low = 1;
-    pBmsGrowatt->Field.FR_Version_High = 0;
-    pBmsGrowatt->Field.Date_Time1 = 0;
-    pBmsGrowatt->Field.Date_Time2 = 0;
-    pBmsGrowatt->Field.Date_Time3 = 0;
-    pBmsGrowatt->Field.Date_Time4 = 0;
-    pBmsGrowatt->Field.Bar_Code12 = 0;
-    pBmsGrowatt->Field.Bar_Code34 = 0;
-    pBmsGrowatt->Field.Bar_Code56 = 0;
-    pBmsGrowatt->Field.Bar_Code78 = 0;
-    pBmsGrowatt->Field.Company_Code_Low = 0;
-    pBmsGrowatt->Field.Company_Code_High = 0;
-    pBmsGrowatt->Field.Using_Cap = 0;
+//// 古瑞瓦特数据更新
+//void	sBmsGrowatt_Data_Update(void)
+//{
+//	INT16U *q;
+//	INT8U i;
+//	
+//	pBmsGrowatt->Field.Reserved1 = 0;
+//    pBmsGrowatt->Field.FW_VER = 1;
+//    pBmsGrowatt->Field.Gauge_Version = 1;
+//    pBmsGrowatt->Field.FR_Version_Low = 1;
+//    pBmsGrowatt->Field.FR_Version_High = 0;
+//    pBmsGrowatt->Field.Date_Time1 = 0;
+//    pBmsGrowatt->Field.Date_Time2 = 0;
+//    pBmsGrowatt->Field.Date_Time3 = 0;
+//    pBmsGrowatt->Field.Date_Time4 = 0;
+//    pBmsGrowatt->Field.Bar_Code12 = 0;
+//    pBmsGrowatt->Field.Bar_Code34 = 0;
+//    pBmsGrowatt->Field.Bar_Code56 = 0;
+//    pBmsGrowatt->Field.Bar_Code78 = 0;
+//    pBmsGrowatt->Field.Company_Code_Low = 0;
+//    pBmsGrowatt->Field.Company_Code_High = 0;
+//    pBmsGrowatt->Field.Using_Cap = 0;
 
-    pBmsGrowatt->Field.Gauge_IC_current = 0;
-    pBmsGrowatt->Field.DataTime.bits.secod = 0;
-    pBmsGrowatt->Field.DataTime.bits.minute = 0;
-    pBmsGrowatt->Field.DataTime.bits.hour = 0;
-    pBmsGrowatt->Field.DataTime.bits.day = 0;
-    pBmsGrowatt->Field.DataTime.bits.Month = 0;
-    pBmsGrowatt->Field.DataTime.bits.Year = 0;
-    
-    pBmsGrowatt->Field.BMS_STATUS.bits.status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.Err_Bit_falg = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.cell_banlace_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.sleep_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.op_dischg_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.op_chg_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.Battery_terminal_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.Master_box_Operation_Mode = 0;
-    if(swGetEmsStatusDischarging())
-    {
-        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 3;
-    }
-    else if(swGetEmsStatusCharging())
-    {
-        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 2;
-    }
-    else
-    {
-        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 1;
-    }
-    pBmsGrowatt->Field.BMS_STATUS.bits.Force_chg_status = 0;
-    pBmsGrowatt->Field.BMS_STATUS.bits.Reserved = 0;
-    
-    pBmsGrowatt->Field.BMS_Err.bits.over_dischg_curr = sbGetBattDcgCurrHi();
-    pBmsGrowatt->Field.BMS_Err.bits.short_circuit = 0;
-    pBmsGrowatt->Field.BMS_Err.bits.over_volt = sbGetBattVoltHi();
-    pBmsGrowatt->Field.BMS_Err.bits.under_volt = sbGetBattVoltLo();
-    pBmsGrowatt->Field.BMS_Err.bits.over_temp_dischg = sbGetCellDcgTempHi();
-    pBmsGrowatt->Field.BMS_Err.bits.over_temp_chg = sbGetCellChgTempHi();
-    pBmsGrowatt->Field.BMS_Err.bits.under_temp_dischg = sbGetCellDcgTempLo();
-    pBmsGrowatt->Field.BMS_Err.bits.under_temp_chg = sbGetCellChgTempLo();
-    pBmsGrowatt->Field.BMS_Err.bits.soft_start_fail = 0;
-    pBmsGrowatt->Field.BMS_Err.bits.Permanent_Fault = 0;
-    pBmsGrowatt->Field.BMS_Err.bits.Delta_V_Fail = 0;
-    pBmsGrowatt->Field.BMS_Err.bits.over_current_charge = sbGetBattChgCurrHi();
-    pBmsGrowatt->Field.BMS_Err.bits.over_temp_mos = sbGetHsTempHi();
-    pBmsGrowatt->Field.BMS_Err.bits.over_temp_enviorment = 0;
-    pBmsGrowatt->Field.BMS_Err.bits.under_temp_enviorment = 0;
-    
-    pBmsGrowatt->Field.SOC = swGetSocNew();
-    pBmsGrowatt->Field.Voltage = swGetBattVoltNew();
-    pBmsGrowatt->Field.Current = swGetBattCurrFiltNew();
-    pBmsGrowatt->Field.Temperature = swGetHsTempNew();;
-    pBmsGrowatt->Field.ChargeCurrentLimit = wRecChargeCurr*10;
-    
-    pBmsGrowatt->Field.Gauge_RM = 0;
-    pBmsGrowatt->Field.Gauge_FCC = 0;
-    pBmsGrowatt->Field.BMS_Ver.bits.hardware_ver = MACHINE_HW_VERSION;
-    pBmsGrowatt->Field.BMS_Ver.bits.software_ver = MACHINE_SW_VERSION;
-    pBmsGrowatt->Field.Delta = 0;
-    pBmsGrowatt->Field.Cycle_Count = swGetEepromBattCycCnt();
-    pBmsGrowatt->Field.RSVD_For_Master_Box = 0;
-    pBmsGrowatt->Field.SOH = swGetSohNew();
-    pBmsGrowatt->Field.CV_Voltage = wRecChargeVolt;
-    pBmsGrowatt->Field.Warning = 0;
-    pBmsGrowatt->Field.MaxDischargeCurr = wRecDischargeCurr*10;
-    pBmsGrowatt->Field.Extended_Error = 0;
-    pBmsGrowatt->Field.CellVoltMax = swGetMaxCellVoltNew();
-    pBmsGrowatt->Field.CellVoltMin = swGetMinCellVoltNew();
-    pBmsGrowatt->Field.CellVoltMaxNo = sbGetMaxCellVoltNo();
-    pBmsGrowatt->Field.CellVoltMinNo = sbGetMinCellVoltNo();
-    pBmsGrowatt->Field.Cell_Series = cADC_CELL_VOLT_MAX;
+//    pBmsGrowatt->Field.Gauge_IC_current = 0;
+//    pBmsGrowatt->Field.DataTime.bits.secod = 0;
+//    pBmsGrowatt->Field.DataTime.bits.minute = 0;
+//    pBmsGrowatt->Field.DataTime.bits.hour = 0;
+//    pBmsGrowatt->Field.DataTime.bits.day = 0;
+//    pBmsGrowatt->Field.DataTime.bits.Month = 0;
+//    pBmsGrowatt->Field.DataTime.bits.Year = 0;
+//    
+//    pBmsGrowatt->Field.BMS_STATUS.bits.status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.Err_Bit_falg = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.cell_banlace_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.sleep_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.op_dischg_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.op_chg_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.Battery_terminal_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.Master_box_Operation_Mode = 0;
+//    if(swGetEmsStatusDischarging())
+//    {
+//        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 3;
+//    }
+//    else if(swGetEmsStatusCharging())
+//    {
+//        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 2;
+//    }
+//    else
+//    {
+//        pBmsGrowatt->Field.BMS_STATUS.bits.SP_status = 1;
+//    }
+//    pBmsGrowatt->Field.BMS_STATUS.bits.Force_chg_status = 0;
+//    pBmsGrowatt->Field.BMS_STATUS.bits.Reserved = 0;
+//    
+//    pBmsGrowatt->Field.BMS_Err.bits.over_dischg_curr = sbGetBattDcgCurrHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.short_circuit = 0;
+//    pBmsGrowatt->Field.BMS_Err.bits.over_volt = sbGetBattVoltHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.under_volt = sbGetBattVoltLo();
+//    pBmsGrowatt->Field.BMS_Err.bits.over_temp_dischg = sbGetCellDcgTempHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.over_temp_chg = sbGetCellChgTempHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.under_temp_dischg = sbGetCellDcgTempLo();
+//    pBmsGrowatt->Field.BMS_Err.bits.under_temp_chg = sbGetCellChgTempLo();
+//    pBmsGrowatt->Field.BMS_Err.bits.soft_start_fail = 0;
+//    pBmsGrowatt->Field.BMS_Err.bits.Permanent_Fault = 0;
+//    pBmsGrowatt->Field.BMS_Err.bits.Delta_V_Fail = 0;
+//    pBmsGrowatt->Field.BMS_Err.bits.over_current_charge = sbGetBattChgCurrHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.over_temp_mos = sbGetHsTempHi();
+//    pBmsGrowatt->Field.BMS_Err.bits.over_temp_enviorment = 0;
+//    pBmsGrowatt->Field.BMS_Err.bits.under_temp_enviorment = 0;
+//    
+//    pBmsGrowatt->Field.SOC = swGetSocNew();
+//    pBmsGrowatt->Field.Voltage = swGetBattVoltNew();
+//    pBmsGrowatt->Field.Current = swGetBattCurrFiltNew();
+//    pBmsGrowatt->Field.Temperature = swGetHsTempNew();;
+//    pBmsGrowatt->Field.ChargeCurrentLimit = wRecChargeCurr*10;
+//    
+//    pBmsGrowatt->Field.Gauge_RM = 0;
+//    pBmsGrowatt->Field.Gauge_FCC = 0;
+//    pBmsGrowatt->Field.BMS_Ver.bits.hardware_ver = MACHINE_HW_VERSION;
+//    pBmsGrowatt->Field.BMS_Ver.bits.software_ver = MACHINE_SW_VERSION;
+//    pBmsGrowatt->Field.Delta = 0;
+//    pBmsGrowatt->Field.Cycle_Count = swGetEepromBattCycCnt();
+//    pBmsGrowatt->Field.RSVD_For_Master_Box = 0;
+//    pBmsGrowatt->Field.SOH = swGetSohNew();
+//    pBmsGrowatt->Field.CV_Voltage = wRecChargeVolt;
+//    pBmsGrowatt->Field.Warning = 0;
+//    pBmsGrowatt->Field.MaxDischargeCurr = wRecDischargeCurr*10;
+//    pBmsGrowatt->Field.Extended_Error = 0;
+//    pBmsGrowatt->Field.CellVoltMax = swGetMaxCellVoltNew();
+//    pBmsGrowatt->Field.CellVoltMin = swGetMinCellVoltNew();
+//    pBmsGrowatt->Field.CellVoltMaxNo = sbGetMaxCellVoltNo();
+//    pBmsGrowatt->Field.CellVoltMinNo = sbGetMinCellVoltNo();
+//    pBmsGrowatt->Field.Cell_Series = cADC_CELL_VOLT_MAX;
 
-    q = &pBmsGrowatt->Field.CellVolt01;
-	for(i = 0; i < cADC_CELL_VOLT_MAX; i++)
-	{
-		if(i < swGetBmsCellVoltNum())
-		{
-			*q = swGetCellVoltFiltNew(i);
-		}
-		else
-		{
-			*q = 0;
-		}
-		q++;
-	}
-}
+//    q = &pBmsGrowatt->Field.CellVolt01;
+//	for(i = 0; i < cADC_CELL_VOLT_MAX; i++)
+//	{
+//		if(i < swGetBmsCellVoltNum())
+//		{
+//			*q = swGetCellVoltFiltNew(i);
+//		}
+//		else
+//		{
+//			*q = 0;
+//		}
+//		q++;
+//	}
+//}
 
+//日月源数据更新
 void	sBmsVoltronic_Data_Update(void)
 {
 	INT8U i;
@@ -2341,6 +2357,7 @@ void	sBmsVoltronic_Data_Update(void)
     pBmsVoltronic->Field.BMS_Discharge_Status.bits.Charge_Ena = fBmsStatus.bits.ChargeEnable;
 }
 
+// BMS数据更新
 void	sBmsDataLocalUpdate(void)
 {
 	INT16S *p, wTemp;
@@ -2434,6 +2451,7 @@ void	sBmsDataLocalUpdate(void)
 	pBmsDataLocal->Field.Reservd12 = 0;
 }
 
+// BMS2数据更新
 void	sBms2DataLocalUpdate(void)
 {
 	INT16S *p;
@@ -2527,9 +2545,10 @@ void	sBms2DataLocalUpdate(void)
 	pBms2DataLocal->Field.CellTemp16 = 0;
 }
 
-
+// 更新BMS信息数据
 void	sBmsInformationDataUpdate(void)
 {
+	// 设置BMS信息数据字段值
 	strBmsInformationData.Field.wType = MACHINE_TYPE;
 	strBmsInformationData.Field.wSubType = swGetEepromBattType();
 	strBmsInformationData.Field.wCommProVer = swGetEepromVer();
@@ -2752,27 +2771,27 @@ INT16U	swGetBmsDataLocal(INT16U wAddrOffset)
 	}
 }
 
-INT16U	swGetGrowatt_BmsDataLocal(INT16U wAddrOffset)
-{
-	INT16U	*pwTemp;
-	
-	if(wAddrOffset < cBMS_Growatt_FEILD_LEN)
-	{
-		pwTemp = (INT16U *)pBmsGrowatt;
-		pwTemp += wAddrOffset;
-		return(*pwTemp);
-	}
-	else
-	{
-		return 0xFFFF;
-	}
-}
+//INT16U	swGetGrowatt_BmsDataLocal(INT16U wAddrOffset)
+//{
+//	INT16U	*pwTemp;
+//	
+//	if(wAddrOffset < cBMS_Growatt_FEILD_LEN)
+//	{
+//		pwTemp = (INT16U *)pBmsGrowatt;
+//		pwTemp += wAddrOffset;
+//		return(*pwTemp);
+//	}
+//	else
+//	{
+//		return 0xFFFF;
+//	}
+//}
 
 INT16U	swGetVoltronic_BmsDataLocal(INT16U wAddrOffset)
 {
 	INT16U	*pwTemp;
 	
-	if(wAddrOffset < cBMS_Growatt_FEILD_LEN)
+	if(wAddrOffset < cBMS_Voltronic_FEILD_LEN)
 	{
 		pwTemp = (INT16U *)pBmsVoltronic;
 		pwTemp += wAddrOffset;

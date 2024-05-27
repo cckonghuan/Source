@@ -65,22 +65,26 @@ INT8U bRouteProt = cROUTE_PROT_SELFDEFINE;
 ********************************************************************************/
 void	sSciRouting(INT8U sciid)
 {
-	INT8U	*RxBuff, RxLen;
+	INT8U	*RxBuff, RxLen;// 指向接收缓冲区的指针和接收到的数据长度
 	//INT16U id, func, addr, nums;
 	//INT16U id, addr, nums,id2;
-	INT16U addr;
-	INT16U temp;
+	INT16U addr;// 存储地址信息的变量
+	INT16U temp;// 临时变量
 	
+	// 获取串口接收缓冲区和数据长度
 	RxBuff = pbGetSciRxBuff(sciid);
 	RxLen = bGetSciRxLen(sciid);
 	
 	//id =  RxBuff[cSCI_ROUTE_ADDR];
 	//func = RxBuff[cSCI_ROUTE_CMD];
 	
+	// 解析地址信息
 	addr = ((INT16U)RxBuff[cSCI_ROUTE_REG_ADDR_H] << 8) + RxBuff[cSCI_ROUTE_REG_ADDR_L];
 	//nums = ((INT16U)RxBuff[cSCI_ROUTE_REG_NUM_H] << 8) + RxBuff[cSCI_ROUTE_REG_NUM_L];
 	
 	// Route
+	//如果接收到的数据判断路由协议
+	// 如果接收到的数据长度为3，第一个字节为0x02，第二个字节为0xFF，则发送事件到优先级为cPrioSuper的事件队列，并设置路由协议为cROUTE_PROT_OPENBLT
 	if((RxLen==0x03)&&(RxBuff[0]==0x02)&&(RxBuff[1]==0xFF))
 	{
 		temp = sbGetSciAddress();
@@ -94,10 +98,12 @@ void	sSciRouting(INT8U sciid)
 		}
 		bRouteProt = cROUTE_PROT_OPENBLT;
 	}
+	// 如果第一个字节大于大于0X20，则设置路由协议位cROUTE_PROT_PYLON
 	else if(RxBuff[cSCI_ROUTE_ADDR] >= 0x20)
 	{
 		bRouteProt = cROUTE_PROT_PYLON;
 	}
+	// 如果地址小于0x0100，则根据cProtocol_Branch的定义选择不同的路由协议
 	else if(addr < 0x0100)
 	{
     #if(cProtocol_Branch == cROUTE_PROT_VOLTRONIC)
@@ -106,6 +112,7 @@ void	sSciRouting(INT8U sciid)
         bRouteProt = cROUTE_PROT_Growatt;
     #endif
 	}
+	// 其他情况下，设置路由协议为cROUTE_PROT_SELFDEFINE
 	else
 	{
 		bRouteProt = cROUTE_PROT_SELFDEFINE;
@@ -115,6 +122,7 @@ void	sSciRouting(INT8U sciid)
 /********************************************************************************
 * Output interface Routines														*
 ********************************************************************************/
+//获取当前的路由协议
 INT8U	sbGetRouteProt(void)
 {
 	return bRouteProt;
@@ -123,6 +131,7 @@ INT8U	sbGetRouteProt(void)
 /********************************************************************************
 * Input interface Routines														*
 ********************************************************************************/
+// 设置路由协议
 void	sSetRouteProt(INT8U prot)
 {
 	bRouteProt = prot;
