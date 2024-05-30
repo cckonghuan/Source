@@ -143,7 +143,7 @@ void	sSoxParaUpdate(void)
 	wEnergyAh80PctRated = wEnergyAh20PctRated * 4;//电池AH为80%额定值
 
 	// 获取电池额定容量和实际容量
-	wEnergyAhReal = swGetEepromBattAhReal(); // 获取电池额定电压
+	wEnergyAhReal = swGetEepromBattAhReal(); 
 	wEnergyAhComp = wEnergyAhReal; // 获取电池实际电压
 	// 获取电压最大容量
 	if(swGetEepromBattAhMax() >= wEnergyAhRated)

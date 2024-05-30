@@ -63,7 +63,7 @@ Description:	None
 #define	MACHINE_TYPE					0x0070
 #define	MACHINE_SUB_TYPE				0x0000	// 机型出厂前扫码设置
 #define	MACHINE_HW_VERSION				10	// for test
-#define	MACHINE_SW_VERSION				112	// for test
+#define	MACHINE_SW_VERSION				113	// for test
 #define	MODBUS_PROT_VERSION				100	// 0-199原对外协议,200优化后对外协议
 #define	CAN_PROT_VERSION				100	// 0-199原CAN并机协议,200优化后并机协议
 #define	MACHINE_DBG_VERSION				0	// 量产时复位为0	// for test

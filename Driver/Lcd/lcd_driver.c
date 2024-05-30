@@ -177,43 +177,49 @@ void	sSendBitToVram(INT8U bitAddr, INT8U bVal, INT8U Time)
     }
 }
 
-void	sFigGroupDisplayNum(INT8U bFirstFigID, INT16U bFigNum, INT16U bNum, INT8U bTime, INT8U bAll)
+// 显示数字的函数
+void sFigGroupDisplayNum(INT8U bFirstFigID, INT16U bFigNum, INT16U bNum, INT8U bTime, INT8U bAll)
 {
-	INT8U bChar,bIsMostBit = 0;
-	
-	if(3 == bFigNum)
-		bFigNum = 100;
-	else if(2 == bFigNum)
-		bFigNum = 10;
-	else
-		bFigNum = 1;
-	
-	bNum %= (bFigNum*10);
-	
-	for(; 0 != bFigNum ;)
-	{
-		bChar = bNum/bFigNum;
-		
-		bNum %= bFigNum;
-		if(0 == bChar && bFigNum != 1 && 0 == bIsMostBit)
-		{
-			if(bAll == true)	// if value = 0, then dispaly 000(num len = 3)
-			{
-				sViewFigModule(cFIG_TYPE_7, bFirstFigID++, char0, bTime);
-			}
-			else
-			{
-				sViewFigModule(cFIG_TYPE_7, bFirstFigID++, cCharSpace, bTime);
-			}
-		}
-		else
-		{
-			sViewFigModule(cFIG_TYPE_7, bFirstFigID++, bChar, bTime);
-			bIsMostBit = 1;
-		}
-		bFigNum /= 10;
-	}
-} 
+    INT8U bChar, bIsMostBit = 0; // bChar 用于存储当前数字，bIsMostBit 标识是否已显示非零数字
+    
+    // 根据 bFigNum 的值确定要显示的数字位数
+    if (3 == bFigNum)
+        bFigNum = 100;
+    else if (2 == bFigNum)
+        bFigNum = 10;
+    else
+        bFigNum = 1;
+    
+    // 限制 bNum 的值在 0 到 bFigNum*10-1 之间
+    bNum %= (bFigNum * 10);
+    
+    // 逐位处理并显示数字
+    for (; 0 != bFigNum ;)
+    {
+        bChar = bNum / bFigNum; // 获取当前位的数字
+        
+        bNum %= bFigNum; // 获取剩余数字
+        if (0 == bChar && bFigNum != 1 && 0 == bIsMostBit)
+        {
+            // 如果当前位数字为 0，且还没有显示非零数字
+            if (bAll == true) // 如果 bAll 为真，显示 0
+            {
+                sViewFigModule(cFIG_TYPE_7, bFirstFigID++, char0, bTime);
+            }
+            else // 否则显示空格
+            {
+                sViewFigModule(cFIG_TYPE_7, bFirstFigID++, cCharSpace, bTime);
+            }
+        }
+        else
+        {
+            // 显示当前位的数字
+            sViewFigModule(cFIG_TYPE_7, bFirstFigID++, bChar, bTime);
+            bIsMostBit = 1; // 标记已显示非零数字
+        }
+        bFigNum /= 10; // 移动到下一位
+    }
+}
 
 void	sFigGroupDisplayLetter(INT8U bFirstFigID, INT8U *bPbuf, INT8U bTime)
 {
