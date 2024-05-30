@@ -49,8 +49,10 @@ Description:	None
 #define			cFIG_ALL_DISP_ENABLE			1
 
 #define			cLCD_PAGE_HOME					0
-#define			cLCD_PAGE_SCI					1
-#define			cLCD_PAGE_BLOFF					2
+#define			cLCD_PAGE_USETIME				1
+#define 		cLCD_PAGE_VOLT					2
+#define			cLCD_PAGE_SCI					3
+#define			cLCD_PAGE_BLOFF					4
 
 #define			mSetVramBit(bitADDR, bTime)		sSendBitToVram(bitADDR, DISPLAY_ON, bTime)
 #define			mClearVramBit(bitADDR)			sSendBitToVram(bitADDR, DISPLAY_OFF, 0)
@@ -229,9 +231,17 @@ void	sLcdTask(INT16U wFilter)
 		{
 			sDisplaySciAddr();
 		}
-		else
+		else if(wNormalPage == cLCD_PAGE_HOME)
 		{
 			sHomeDisplay();
+		}
+		else if(wNormalPage == cLCD_PAGE_USETIME)
+		{
+			sTimeDisplay();
+		}
+		else(wNormalPage == cLCD_PAGE_VOLT)
+		{
+			sVoltDisplay();
 		}
 		sStatusDisplay();
 	}
@@ -377,8 +387,37 @@ void	sHomeDisplay(void)
 	}
 	else if(bBmsMode != cPowerOnMode)
 	{
-		wTemp = (swGetBattVoltFiltNew() + 5) / 10;	// 0.1V
-		sDisplayBattVolt(wTemp);
+		wTemp = swGetSocNew();		// 1%
+		sDisplayBattSoc(wTemp);
+	}
+}
+
+void 	sVoltDisplay(void)
+{
+	wTemp = (swGetBattVoltFiltNew() + 5) / 10;	// 0.1V
+	sDisplayBattVolt(wTemp);
+}
+
+void	sTimeDisplay(void)
+{
+	INT16U wtemp1,wtemp2,wtemp3,Time;
+	wTemp1 = (swAbs(swGetBattCurrFiltNew()) + 5) / 10;	// 1A
+	wTemp2 = swGetSocNew();
+	wtemp3 = swGetBmsRatedAH();
+	if(wTemp1>0)
+	{
+		Time = (wtemp3/1000*wtemp2)/wTemp1;
+		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
+	}
+	if else(wTemp1<0)
+	{
+		sViewFigModule(cFIG_TYPE_7, FIG1_7SEG, charC, cALWAYS_LIGHT);
+		sViewFigModule(cFIG_TYPE_7, FIG2_7SEG, charC, cALWAYS_LIGHT);
+	}
+	if else(wTemp1=0)
+	{
+		Time = 999;
+		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
 	}
 }
 
@@ -491,6 +530,7 @@ void	sLoopDisplay(void)
 		default:break;
 	}
 }
+
 
 void	sDisplayFaultCode(INT16U wCode)
 {
@@ -655,6 +695,7 @@ void	sDisplayBattSoc(INT16U wSoc)	// 1%
 	{
 		sFigGroupDisplayNum(FIG2_7SEG, 2, wTemp%100, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
 	}
+	mSetVramBit(cBIT_SEG8A_TEMPC, cALWAYS_LIGHT);
 }
 
 extern INT8U	bParallelErrChkCnt;
@@ -806,7 +847,7 @@ void	sDisplayMosTemp(INT16S wTmp)
 			sFigGroupDisplayNum(FIG2_7SEG, 2, wTemp, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
 		}
 	}
-	mSetVramBit(cBIT_SEG8A_TEMPC, cALWAYS_LIGHT);
+	//mSetVramBit(cBIT_SEG8A_TEMPC, cALWAYS_LIGHT);
 }
 
 void	sDisplayCellVolt(INT8U	bNo, INT16S wVolt)
@@ -873,7 +914,7 @@ void	sDisplayCellTemp(INT8U	bNo, INT16S wTmp)
 			sFigGroupDisplayNum(FIG3_7SEG, 1, -wTemp, cALWAYS_LIGHT, cFIG_ALL_DISP_ENABLE);
 		}
 	}
-	mSetVramBit(cBIT_SEG8A_TEMPC, cALWAYS_LIGHT);
+	//mSetVramBit(cBIT_SEG8A_TEMPC, cALWAYS_LIGHT);
 }
 
 void	sDisplaySciAddr(void)
