@@ -157,8 +157,8 @@ void	sDisplayMosTemp(INT16S wTmp);
 void	sDisplayCellVolt(INT8U	bNo, INT16S wVolt);
 void	sDisplayCellTemp(INT8U	bNo, INT16S wTmp);
 void	sDisplaySciAddr(void);
-
-
+void	sVoltDisplay(void);
+void	sTimeDisplay(void);
 /********************************************************************************
 * Routines' implementations														*
 ********************************************************************************/
@@ -239,7 +239,7 @@ void	sLcdTask(INT16U wFilter)
 		{
 			sTimeDisplay();
 		}
-		else(wNormalPage == cLCD_PAGE_VOLT)
+		else if(wNormalPage == cLCD_PAGE_VOLT)
 		{
 			sVoltDisplay();
 		}
@@ -394,27 +394,29 @@ void	sHomeDisplay(void)
 
 void 	sVoltDisplay(void)
 {
+	INT16U wTemp;
 	wTemp = (swGetBattVoltFiltNew() + 5) / 10;	// 0.1V
 	sDisplayBattVolt(wTemp);
 }
 
 void	sTimeDisplay(void)
 {
-	INT16U wtemp1,wtemp2,wtemp3,Time;
+	INT16U wTemp2,wTemp3,Time;
+	INT16S wTemp1;
 	wTemp1 = (swAbs(swGetBattCurrFiltNew()) + 5) / 10;	// 1A
 	wTemp2 = swGetSocNew();
-	wtemp3 = swGetBmsRatedAH();
-	if(wTemp1>0)
+	wTemp3 = swGetBmsRatedAH();
+	if(wTemp1 > 0)
 	{
-		Time = (wtemp3/1000*wtemp2)/wTemp1;
+		Time = (wTemp3/1000*wTemp2)/wTemp1;
 		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
 	}
-	if else(wTemp1<0)
+	else if(wTemp1 < 0)
 	{
 		sViewFigModule(cFIG_TYPE_7, FIG1_7SEG, charC, cALWAYS_LIGHT);
 		sViewFigModule(cFIG_TYPE_7, FIG2_7SEG, charC, cALWAYS_LIGHT);
 	}
-	if else(wTemp1=0)
+	 else if(wTemp1 == 0)
 	{
 		Time = 999;
 		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
