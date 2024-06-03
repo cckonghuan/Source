@@ -57,6 +57,8 @@ Description:	None
 #define			mSetVramBit(bitADDR, bTime)		sSendBitToVram(bitADDR, DISPLAY_ON, bTime)
 #define			mClearVramBit(bitADDR)			sSendBitToVram(bitADDR, DISPLAY_OFF, 0)
 
+extern INT16S GetBattCurr1(void);
+	
 typedef struct{
 	INT16U SelectMode:1;
 	INT16U ConfigMode:1;
@@ -401,25 +403,43 @@ void 	sVoltDisplay(void)
 
 void	sTimeDisplay(void)
 {
-	INT16U wTemp2,wTemp3,Time;
-	INT16S wTemp1;
-	wTemp1 = (swAbs(swGetBattCurrFiltNew()) + 5) / 10;	// 1A
-	wTemp2 = swGetSocNew();
-	wTemp3 = swGetBmsRatedAH();
-	if(wTemp1 > 0)
-	{
-		Time = (wTemp3/1000*wTemp2)/wTemp1;
-		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
-	}
-	else if(wTemp1 < 0)
+	if(GetBattCurr1()<0)
 	{
 		sViewFigModule(cFIG_TYPE_7, FIG1_7SEG, charC, cALWAYS_LIGHT);
-		sViewFigModule(cFIG_TYPE_7, FIG2_7SEG, charC, cALWAYS_LIGHT);
+		sViewFigModule(cFIG_TYPE_7, FIG2_7SEG, charH, cALWAYS_LIGHT);
 	}
-	 else if(wTemp1 == 0)
+	else
 	{
-		Time = 999;
-		sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
+		INT16U wTemp2,wTemp3,Time;
+		INT16U wTemp1;
+		wTemp1 = (swAbs(swGetBattCurrFiltNew()) + 5) / 10;	// 1A
+		wTemp2 = swGetSocNew();
+		wTemp3 = swGetBmsRatedAH();
+		if(wTemp1 > 0)
+		{	
+				Time = (wTemp3/1000*wTemp2)/wTemp1;
+			if(Time>99)
+			{
+				Time = 99;
+			}
+			else if(Time<10)
+			{
+				Time = (wTemp3/100*wTemp2)/wTemp1;
+				mSetVramBit(cBIT_SEG4F_DOT2, cALWAYS_LIGHT);
+			}
+				sFigGroupDisplayNum(FIG1_7SEG, 2, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
+				sViewFigModule(cFIG_TYPE_7, FIG3_7SEG, charH, cALWAYS_LIGHT);
+		}
+//		else if(swGetBattCurrFiltNew() < 0)
+//		{
+//			sViewFigModule(cFIG_TYPE_7, FIG1_7SEG, charC, cALWAYS_LIGHT);
+//			sViewFigModule(cFIG_TYPE_7, FIG2_7SEG, charH, cALWAYS_LIGHT);
+//		}
+		 else if(wTemp1 == 0)
+		{
+			Time = 999;
+			sFigGroupDisplayNum(FIG1_7SEG, 3, Time, cALWAYS_LIGHT, cFIG_ALL_DISP_DISABLE);
+		}
 	}
 }
 
