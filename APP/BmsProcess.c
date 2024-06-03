@@ -3606,4 +3606,7 @@ void	sSetBmsDataReservd8(INT8U bNo, INT16U wData)
 {
 	pBmsData[bNo]->Field.Reservd8 = wData;
 }
-
+INT16S GetBattCurr1(void)
+{
+	return pBms2DataLocal->Field.BattCurr;
+}
