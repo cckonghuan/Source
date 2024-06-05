@@ -3507,8 +3507,8 @@ void	sVoltronic_BuildRdFrame(INT8U *RxBuff, INT8U *TxBuff, INT8U sciid, INT16U (
 	
 	TxBuff[cMODBUS_ADDR] = RxBuff[cMODBUS_ADDR];
 	TxBuff[cMODBUS_CMD] = RxBuff[cMODBUS_CMD];
-//	TxBuff[2] = (RdNums << 1) >> 8;
-//  TxBuff[3] = (RdNums << 1) & 0x00FF;
+	//	TxBuff[2] = (RdNums << 1) >> 8;
+	//  TxBuff[3] = (RdNums << 1) & 0x00FF;
 	TxBuff[2] = RdNums >> 8;
 	TxBuff[3] = RdNums & 0x00FF;
 	TxLen = 4;
